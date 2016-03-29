@@ -125,7 +125,7 @@ void
 TapEpcMme::DoInitialUeMessage (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, uint64_t imsi, uint16_t gci)
 {
   // mmeUeS1Id = imsi, enbUeS1Id = rnti, imsi = imsi, gci = m_cellId
-  NS_LOG_FUNCTION ("mmeUeS1Id = " << mmeUeS1Id << " enbUeS1Id = " << enbUeS1Id << " imsi = " << imsi << " gci = " << gci);
+  NS_LOG_FUNCTION (this << mmeUeS1Id << enbUeS1Id << imsi << gci);
   std::map<uint64_t, Ptr<UeInfo> >::iterator it = m_ueInfoMap.find (imsi);
   NS_ASSERT_MSG (it != m_ueInfoMap.end (), "could not find any UE with IMSI " << imsi);
   it->second->cellId = gci;

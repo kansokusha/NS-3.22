@@ -348,7 +348,7 @@ main (int argc, char *argv[])
   // allocating.  This address is allocated in the simulation and assigned to
   // the tap bridge.  This address is given in ip.
   //
-  ABORT_IF (ip4 == NULL && ip6 == NULL, "IP Address is a required argument", 0);
+  // ABORT_IF (ip4 == NULL && ip6 == NULL, "IP Address is a required argument", 0);
   if (ip4)
     {
       ABORT_IF (netmask == NULL, "Net mask is a required argument", 0);

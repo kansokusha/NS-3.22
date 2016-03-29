@@ -68,12 +68,11 @@ main (int argc, char *argv[])
   // I've seen that if BestEffort is used things can break
   // (even simple stuff such as ARP)
   GlobalValue::Bind ("SimulatorImplementationType", StringValue ("ns3::RealtimeSimulatorImpl"));
+  GlobalValue::Bind ("ChecksumEnabled", BooleanValue (true));
 
   // let's speed things up, we don't need these details for this scenario
-  // Config::SetDefault ("ns3::LteSpectrumPhy::CtrlErrorModelEnabled", BooleanValue (false));
-  // Config::SetDefault ("ns3::LteSpectrumPhy::DataErrorModelEnabled", BooleanValue (false));  
-
-  GlobalValue::Bind ("ChecksumEnabled", BooleanValue (true));
+  Config::SetDefault ("ns3::LteSpectrumPhy::CtrlErrorModelEnabled", BooleanValue (false));
+  Config::SetDefault ("ns3::LteSpectrumPhy::DataErrorModelEnabled", BooleanValue (false));  
 
   ConfigStore inputConfig;
   inputConfig.ConfigureDefaults();
@@ -127,6 +126,7 @@ main (int argc, char *argv[])
 
   // Install the IP stack on the UEs
   InternetStackHelper internet;
+  internet.SetIpv6StackInstall (false);
   internet.Install (ueNodes);
 
   // Assign IP address to UEs, and install applications

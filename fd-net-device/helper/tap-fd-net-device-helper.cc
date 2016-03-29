@@ -66,7 +66,7 @@ TapFdNetDeviceHelper::TapFdNetDeviceHelper ()
   m_modePi = false;
   m_tapIp4 = "";
   m_tapMask4 = "";
-  m_tapIp6 = "";
+  m_tapIp6 = Ipv6Address::GetZero ();
   m_tapPrefix6 = 64;
   m_tapMac = Mac48Address::Allocate ();
 }
@@ -234,7 +234,7 @@ TapFdNetDeviceHelper::CreateFileDescriptor (void) const
         }
 
       std::ostringstream ossIp6;
-      if (m_tapIp6 != "")
+      if (m_tapIp6 != Ipv6Address::GetZero ())
         {
           ossIp6 << "-I" << m_tapIp6;
         }

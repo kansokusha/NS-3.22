@@ -162,6 +162,7 @@ TapEpcHelper::MasterInitialize ()
   m_ueAddressHelper.SetBase ("7.0.0.0", "255.0.0.0", m_masterUeIpAddressBase.c_str ());
   
   InternetStackHelper internet;
+  internet.SetIpv6StackInstall (false);
   
   // create SgwPgwNode
   m_sgwPgw = CreateObject<Node> ();
@@ -290,7 +291,7 @@ TapEpcHelper::SlaveInitialize ()
   m_ueDefaultGatewayMacAddress = Mac48Address ("00:00:00:00:01:01");
   
   InternetStackHelper internet;
-  internet.SetIpv4StackInstall (true);
+  internet.SetIpv6StackInstall (false);
 
   m_epcSlave = CreateObject<Node> ();
   internet.Install (m_epcSlave);
@@ -524,6 +525,7 @@ TapEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevice, uint16_t ce
 
   // add an IPv4 stack to the previously created eNB
   InternetStackHelper internet;
+  internet.SetIpv6StackInstall (false);
   internet.Install (enb);
 
   // create an TapFdNetDevice for the eNB to connect with the SGW and other eNBs
@@ -599,6 +601,7 @@ TapEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevice, uint16_t ce
       packet->AddHeader (addEnbRequestHeader);
       packet->AddHeader (tapEpcHelperHeader);
       m_epcSlaveSocket->Send (packet);
+      // Simulator::Schedule (Seconds (5.0), static_cast<int (Socket::*)(Ptr<Packet>)>(&Socket::Send), m_epcSlaveSocket, packet); 
       NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
     }
 }
@@ -674,6 +677,7 @@ TapEpcHelper::AddUe (Ptr<NetDevice> ueDevice, uint64_t imsi)
       packet->AddHeader (addUeRequestHeader);
       packet->AddHeader (tapEpcHelperHeader);
       m_epcSlaveSocket->Send (packet);
+      // Simulator::Schedule (Seconds (10.0), static_cast<int (Socket::*)(Ptr<Packet>)>(&Socket::Send), m_epcSlaveSocket, packet); 
       NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
     }
 }
