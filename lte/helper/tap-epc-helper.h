@@ -201,8 +201,6 @@ private:
   Ipv4Address m_ueDefaultGatewayAddress;
 
   // SystemCondition m_epcSlaveSocketCondition;
-  
-  std::vector<EpcTft> tftContainer;
 };
 
 } // namespace ns3
