@@ -25,8 +25,10 @@
 #include <ns3/log.h>
 #include <ns3/inet-socket-address.h>
 #include <ns3/mac48-address.h>
+#include <ns3/arp-cache.h>
 #include <ns3/eps-bearer.h>
 #include <ns3/ipv4-address.h>
+#include <ns3/ipv4-interface.h>
 #include <ns3/internet-stack-helper.h>
 #include <ns3/packet-socket-helper.h>
 #include <ns3/packet-socket-address.h>
@@ -60,7 +62,7 @@ NS_OBJECT_ENSURE_REGISTERED (TapEpcHelper);
 TapEpcHelper::TapEpcHelper () 
   : m_gtpuUdpPort (2152),  // fixed by the standard
     m_s1apTcpPort (36412),
-    m_epcMasterTcpPort (36413)
+    m_masterTcpPort (36413)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -91,15 +93,15 @@ TapEpcHelper::GetTypeId (void)
                    StringValue ("mmeTap"),
                    MakeStringAccessor (&TapEpcHelper::m_mmeDeviceName),
                    MakeStringChecker ())
-    .AddAttribute ("EpcMasterDeviceName",
-                   "The name of the device used for the EpcMaster",
+    .AddAttribute ("MasterDeviceName",
+                   "The name of the device used for Master",
                    StringValue ("masterTap"),
-                   MakeStringAccessor (&TapEpcHelper::m_epcMasterDeviceName),
+                   MakeStringAccessor (&TapEpcHelper::m_masterDeviceName),
                    MakeStringChecker ())
     .AddAttribute ("EpcSlaveDeviceName",
-                   "The name of the device used for the EpcSlave",
+                   "The name of the device used for Slave",
                    StringValue ("slaveTap"),
-                   MakeStringAccessor (&TapEpcHelper::m_epcSlaveDeviceName),
+                   MakeStringAccessor (&TapEpcHelper::m_slaveDeviceName),
                    MakeStringChecker ())
     .AddAttribute ("Mode",
                    "The operating mode to use",
@@ -127,11 +129,26 @@ TapEpcHelper::GetTypeId (void)
                    StringValue ("0.0.1.1"),
                    MakeStringAccessor (&TapEpcHelper::m_slaveIpAddressBase),
                    MakeStringChecker ())
-    .AddAttribute ("Mac48AddressBase",
-                   "The base of MAC address",
-                   UintegerValue (256),
-                   MakeUintegerAccessor (&TapEpcHelper::m_mac48AddressBase),
-                   MakeUintegerChecker<uint64_t> ())
+    .AddAttribute ("TunMacAddress", 
+                   "MAC address used for the TUN",
+                   StringValue ("00:00:00:59:00:aa"),
+                   MakeStringAccessor (&TapEpcHelper::m_tunMacAddress),
+                   MakeStringChecker ())
+    .AddAttribute ("SgwMacAddress", 
+                   "MAC address used for the SGW",
+                   StringValue ("00:00:00:59:00:ab"),
+                   MakeStringAccessor (&TapEpcHelper::m_sgwMacAddress),
+                   MakeStringChecker ())
+    .AddAttribute ("MmeMacAddress", 
+                   "MAC address used for the MME",
+                   StringValue ("00:00:00:59:00:ac"),
+                   MakeStringAccessor (&TapEpcHelper::m_mmeMacAddress),
+                   MakeStringChecker ())
+    .AddAttribute ("MasterMacAddress", 
+                   "MAC address used for the Master",
+                   StringValue ("00:00:00:59:00:ad"),
+                   MakeStringAccessor (&TapEpcHelper::m_masterMacAddress),
+                   MakeStringChecker ())
     ;
   return tid;
 }
@@ -172,8 +189,8 @@ TapEpcHelper::MasterInitialize ()
   m_mmeNode = CreateObject<Node> ();
   internet.Install (m_mmeNode);
 
-  m_epcMaster = CreateObject<Node> ();
-  internet.Install (m_epcMaster);
+  m_master = CreateObject<Node> ();
+  internet.Install (m_master);
   
   // create TUN device implementing tunneling of user data over GTP-U/UDP/IP
   m_tunDevice = CreateObject<VirtualNetDevice> ();
@@ -181,8 +198,9 @@ TapEpcHelper::MasterInitialize ()
   m_tunDevice->SetAttribute ("Mtu", UintegerValue (30000));
 
   // allocate a Mac48Address for TUN device
-  m_tunDevice->SetAddress (TapEpcHelper::AllocateMac48Address ());
-  m_ueDefaultGatewayMacAddress = m_tunDevice->GetAddress ();
+  m_tunDevice->SetAddress (Mac48Address (m_tunMacAddress.c_str ()));
+  NS_LOG_LOGIC ("MAC address of TUN device: " << m_tunMacAddress.c_str());
+  m_ueDefaultGatewayMacAddress = m_tunMacAddress;
 
   m_sgwPgw->AddDevice (m_tunDevice);
   NetDeviceContainer tunDeviceContainer;
@@ -199,35 +217,38 @@ TapEpcHelper::MasterInitialize ()
   TapFdNetDeviceHelper tap;
   NS_LOG_LOGIC ("SGW device: " << m_sgwDeviceName);
   tap.SetDeviceName (m_sgwDeviceName);
-  tap.SetTapMacAddress (TapEpcHelper::AllocateMac48Address ());
+  tap.SetTapMacAddress (Mac48Address (m_sgwMacAddress.c_str ()));
   NetDeviceContainer sgwDevices = tap.Install (m_sgwPgw);
-  Ptr<NetDevice> sgwDevice = sgwDevices.Get (0);
+  sgwDevices.Get (0)->SetAddress (Mac48Address (m_sgwMacAddress.c_str ()));
+  NS_LOG_LOGIC ("MAC address of SGW: " << sgwDevices.Get (0)->GetAddress ());
   
   // create TapFdNetDevice for MME
   NS_LOG_LOGIC ("MME device: " << m_mmeDeviceName);
   tap.SetDeviceName (m_mmeDeviceName);
+  tap.SetTapMacAddress (Mac48Address (m_mmeMacAddress.c_str ()));
   NetDeviceContainer mmeDevices = tap.Install (m_mmeNode);
-  tap.SetTapMacAddress (TapEpcHelper::AllocateMac48Address ());
-  Ptr<NetDevice> mmeDevice = mmeDevices.Get (0);
+  mmeDevices.Get (0)->SetAddress (Mac48Address (m_mmeMacAddress.c_str ()));
+  NS_LOG_LOGIC ("MAC address of MME: " << mmeDevices.Get (0)->GetAddress ());
   
   // create TapFdNetDevice for EpcMaster
-  NS_LOG_LOGIC ("EpcMaster device: " << m_epcMasterDeviceName);
-  tap.SetDeviceName (m_epcMasterDeviceName);
-  NetDeviceContainer epcMasterDevices = tap.Install (m_epcMaster);
-  tap.SetTapMacAddress (TapEpcHelper::AllocateMac48Address ());
-  Ptr<NetDevice> epcMasterDevice = epcMasterDevices.Get (0);
+  NS_LOG_LOGIC ("Master device: " << m_masterDeviceName);
+  tap.SetDeviceName (m_masterDeviceName);
+  tap.SetTapMacAddress (Mac48Address (m_masterMacAddress.c_str()));
+  NetDeviceContainer masterDevices = tap.Install (m_master);
+  masterDevices.Get (0)->SetAddress (Mac48Address (m_masterMacAddress.c_str ()));
+  NS_LOG_LOGIC ("MAC address of Master: " << masterDevices.Get (0)->GetAddress ());
   
   // we use a /8 subnet so the SGW and the eNBs can talk directly to each other
   m_epcIpv4AddressHelper.SetBase ("10.0.0.0", "255.0.0.0", m_masterIpAddressBase.c_str ());
-  Ipv4InterfaceContainer sgwIpIfaces = m_epcIpv4AddressHelper.Assign (sgwDevices);
+  Ipv4InterfaceContainer sgwIpIfaces = m_epcIpv4AddressHelper.Assign (sgwDevices.Get (0));
   m_sgwIpv4Address = sgwIpIfaces.GetAddress (0);
   NS_LOG_LOGIC ("IP address of SGW: " << m_sgwIpv4Address);
-  Ipv4InterfaceContainer mmeIpIfaces = m_epcIpv4AddressHelper.Assign (mmeDevices);
+  Ipv4InterfaceContainer mmeIpIfaces = m_epcIpv4AddressHelper.Assign (mmeDevices.Get (0));
   m_mmeIpv4Address = mmeIpIfaces.GetAddress (0);
   NS_LOG_LOGIC ("IP address of MME: " << m_mmeIpv4Address);
-  Ipv4InterfaceContainer epcMasterIpIfaces = m_epcIpv4AddressHelper.Assign (epcMasterDevices);
-  m_epcMasterIpv4Address = epcMasterIpIfaces.GetAddress (0);
-  NS_LOG_LOGIC ("IP address of EpcMaster: " << m_epcMasterIpv4Address);
+  Ipv4InterfaceContainer masterIpIfaces = m_epcIpv4AddressHelper.Assign (masterDevices.Get (0));
+  m_masterIpv4Address = masterIpIfaces.GetAddress (0);
+  NS_LOG_LOGIC ("IP address of EpcMaster: " << m_masterIpv4Address);
   // m_epcIpv4AddressHelper.SetBase ("10.0.0.0", "255.0.0.0", "0.0.0.101");
   
   // create S1-U socket
@@ -244,12 +265,12 @@ TapEpcHelper::MasterInitialize ()
                                     MakeCallback (&TapEpcHelper::HandleS1apConnection, this));
                                     
   // create EpcMaster socket
-  Ptr<Socket> epcMasterSocket = Socket::CreateSocket (m_epcMaster, TypeId::LookupByName ("ns3::TcpSocketFactory"));
-  retval = epcMasterSocket->Bind (InetSocketAddress (Ipv4Address::GetAny (), m_epcMasterTcpPort));
+  Ptr<Socket> masterSocket = Socket::CreateSocket (m_master, TypeId::LookupByName ("ns3::TcpSocketFactory"));
+  retval = masterSocket->Bind (InetSocketAddress (Ipv4Address::GetAny (), m_masterTcpPort));
   NS_ASSERT (retval == 0);
-  epcMasterSocket->Listen ();
-  epcMasterSocket->SetAcceptCallback (MakeNullCallback<bool, Ptr<Socket>, const Address &> (),
-                                      MakeCallback (&TapEpcHelper::HandleEpcMasterConnection, this));
+  masterSocket->Listen ();
+  masterSocket->SetAcceptCallback (MakeNullCallback<bool, Ptr<Socket>, const Address &> (),
+                                      MakeCallback (&TapEpcHelper::HandleMasterConnection, this));
 
   // create EpcSgwPgwApplication
   m_sgwPgwApp = CreateObject<EpcSgwPgwApplication> (m_tunDevice, sgwPgwS1uSocket);
@@ -281,36 +302,40 @@ TapEpcHelper::SlaveInitialize ()
   NS_LOG_LOGIC ("IP address of SGW: " << m_sgwIpv4Address);
   m_mmeIpv4Address = m_epcIpv4AddressHelper.NewAddress ();
   NS_LOG_LOGIC ("IP address of MME: " << m_mmeIpv4Address);
-  m_epcMasterIpv4Address = m_epcIpv4AddressHelper.NewAddress ();
-  NS_LOG_LOGIC ("IP address of EpcMaster: " << m_epcMasterIpv4Address);
+  m_masterIpv4Address = m_epcIpv4AddressHelper.NewAddress ();
+  NS_LOG_LOGIC ("IP address of EpcMaster: " << m_masterIpv4Address);
   
-  m_ueDefaultGatewayMacAddress = Mac48Address ("00:00:00:00:00:01");
+  m_ueDefaultGatewayMacAddress = m_tunMacAddress;
   
   InternetStackHelper internet;
   internet.SetIpv6StackInstall (false);
 
-  m_epcSlave = CreateObject<Node> ();
-  internet.Install (m_epcSlave);
+  m_slave = CreateObject<Node> ();
+  internet.Install (m_slave);
   
   // create TapFdNetDevice for EpcSlave
-  NS_LOG_LOGIC ("EpcSlave device: " << m_epcSlaveDeviceName);
+  NS_LOG_LOGIC ("EpcSlave device: " << m_slaveDeviceName);
   TapFdNetDeviceHelper tap;
-  tap.SetDeviceName (m_epcSlaveDeviceName);
-  tap.SetTapMacAddress (TapEpcHelper::AllocateMac48Address ());
-  NetDeviceContainer epcSlaveDevices = tap.Install (m_epcSlave);
-  Ptr<NetDevice> epcSlaveDevice = epcSlaveDevices.Get (0);
-  epcSlaveDevice->SetAddress (TapEpcHelper::AllocateMac48Address ());
+  tap.SetDeviceName (m_slaveDeviceName);
+  uint64_t key = 0;
+  for (const char *base = m_slaveIpAddressBase.c_str (); *base != '\0'; ++base)
+    {
+      key = key + *base;
+    }
+  tap.SetTapMacAddress (TapEpcHelper::AllocateMac48Address (static_cast<uint64_t> (key)));
+  NetDeviceContainer slaveDevices = tap.Install (m_slave);
+  slaveDevices.Get (0)->SetAddress (TapEpcHelper::AllocateMac48Address (static_cast<uint64_t> (key)));
   
   m_epcIpv4AddressHelper.SetBase ("10.0.0.0", "255.0.0.0", m_slaveIpAddressBase.c_str ());
-  Ipv4InterfaceContainer epcSlaveIpIfaces = m_epcIpv4AddressHelper.Assign (epcSlaveDevices);
-  m_epcSlaveIpv4Address = epcSlaveIpIfaces.GetAddress (0);
-  NS_LOG_LOGIC ("IP address of EpcSlave: " << m_epcSlaveIpv4Address);
+  Ipv4InterfaceContainer slaveIpIfaces = m_epcIpv4AddressHelper.Assign (slaveDevices.Get (0));
+  
+  NS_LOG_LOGIC ("IP address of Slave: " << slaveIpIfaces.GetAddress (0));
 
   // create EpcSlave socket
-  m_epcSlaveSocket = Socket::CreateSocket (m_epcSlave, TypeId::LookupByName ("ns3::TcpSocketFactory"));
-  int retval = m_epcSlaveSocket->Connect (InetSocketAddress (m_epcMasterIpv4Address, m_epcMasterTcpPort));
+  m_slaveSocket = Socket::CreateSocket (m_slave, TypeId::LookupByName ("ns3::TcpSocketFactory"));
+  int retval = m_slaveSocket->Connect (InetSocketAddress (m_masterIpv4Address, m_masterTcpPort));
   NS_ASSERT (retval == 0);
-  m_epcSlaveSocket->SetRecvCallback (MakeCallback (&TapEpcHelper::RecvFromEpcSlaveSocket, this));
+  m_slaveSocket->SetRecvCallback (MakeCallback (&TapEpcHelper::RecvFromSlaveSocket, this));
   
   EpcHelper::DoInitialize ();
 }
@@ -322,9 +347,9 @@ TapEpcHelper::SetMode (enum Mode mode)
 }
 
 void
-TapEpcHelper::HandleEpcMasterConnection (Ptr<Socket> socket, const Address &addr)
+TapEpcHelper::HandleMasterConnection (Ptr<Socket> socket, const Address &addr)
 {
-  socket->SetRecvCallback (MakeCallback (&TapEpcHelper::RecvFromEpcMasterSocket, this));
+  socket->SetRecvCallback (MakeCallback (&TapEpcHelper::RecvFromMasterSocket, this));
 }
 
 void
@@ -336,7 +361,7 @@ TapEpcHelper::HandleS1apConnection (Ptr<Socket> socket, const Address &addr)
 }
 
 void
-TapEpcHelper::RecvFromEpcSlaveSocket (Ptr<Socket> socket)
+TapEpcHelper::RecvFromSlaveSocket (Ptr<Socket> socket)
 {
   NS_LOG_FUNCTION (this);
   Ptr<Packet> packet = socket->Recv ();
@@ -361,15 +386,15 @@ TapEpcHelper::RecvFromEpcSlaveSocket (Ptr<Socket> socket)
 }
 
 void
-TapEpcHelper::RecvFromEpcMasterSocket (Ptr<Socket> socket)
+TapEpcHelper::RecvFromMasterSocket (Ptr<Socket> socket)
 {
   Ptr<Packet> packet = socket->Recv ();
   NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
-  HandleEpcMasterPacket (socket, packet);
+  HandleMasterPacket (socket, packet);
 }
 
 void
-TapEpcHelper::HandleEpcMasterPacket (Ptr<Socket> socket, Ptr<Packet> packet)
+TapEpcHelper::HandleMasterPacket (Ptr<Socket> socket, Ptr<Packet> packet)
 {
   TapEpcHelperHeader tapEpcHelperHeader;
   packet->RemoveHeader (tapEpcHelperHeader);
@@ -440,7 +465,7 @@ TapEpcHelper::HandleEpcMasterPacket (Ptr<Socket> socket, Ptr<Packet> packet)
     
   if (packet->GetSize () != 0)
     {
-      HandleEpcMasterPacket (socket, packet);
+      HandleMasterPacket (socket, packet);
     }
 }
 
@@ -522,23 +547,42 @@ TapEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevice, uint16_t ce
   InternetStackHelper internet;
   internet.SetIpv6StackInstall (false);
   internet.Install (enb);
-
+  
   // create an TapFdNetDevice for the eNB to connect with the SGW and other eNBs
   std::ostringstream enbDevNameWithCount;
-  enbDevNameWithCount << m_enbDeviceName << m_enbCount++;
+  enbDevNameWithCount << m_enbDeviceName << cellId;
   TapFdNetDeviceHelper tap;
   NS_LOG_LOGIC ("eNB device: " << enbDevNameWithCount.str());
   tap.SetDeviceName (enbDevNameWithCount.str());
-  tap.SetTapMacAddress (TapEpcHelper::AllocateMac48Address ());
+  tap.SetTapMacAddress (TapEpcHelper::AllocateMac48Address (static_cast<uint64_t> (cellId)));
   NetDeviceContainer enbDevices = tap.Install (enb);
-  
-  Ptr<NetDevice> enbDev = enbDevices.Get (0);
+  enbDevices.Get (0)->SetAddress (TapEpcHelper::AllocateMac48Address (static_cast<uint64_t> (cellId)));
+  NS_LOG_LOGIC ("MAC address of eNB: " << enbDevices.Get (0)->GetAddress ());
 
-  Ipv4InterfaceContainer enbIpIfaces = m_epcIpv4AddressHelper.Assign (enbDevices);
-  
+  Ipv4InterfaceContainer enbIpIfaces = m_epcIpv4AddressHelper.Assign (enbDevices.Get (0));
   Ipv4Address enbAddress = enbIpIfaces.GetAddress (0);
   NS_LOG_LOGIC ("IP address of eNB: " << enbAddress);
-
+  
+  // setup ARP cache
+  NS_LOG_LOGIC ("Number of IPv4 Interfaces on eNB: " << enb->GetObject<Ipv4L3Protocol> ()->GetNInterfaces ());
+  Ptr<Ipv4Interface> ipIface = enb->GetObject<Ipv4L3Protocol> ()->GetInterface (1);
+  Ptr<ArpCache> arpCache = CreateObject<ArpCache> ();
+  arpCache->SetAliveTimeout (Seconds(3600 * 24));
+  
+  ArpCache::Entry *entry = arpCache->Add (m_sgwIpv4Address);
+  entry->MarkWaitReply (0);
+  entry->MarkAlive (Mac48Address (m_sgwMacAddress.c_str ()));
+  
+  entry = arpCache->Add (m_mmeIpv4Address);
+  entry->MarkWaitReply(0);
+  entry->MarkAlive (Mac48Address (m_mmeMacAddress.c_str ()));
+  
+  entry = arpCache->Add (m_masterIpv4Address);
+  entry->MarkWaitReply (0);
+  entry->MarkAlive (Mac48Address (m_masterMacAddress.c_str ()));
+  
+  ipIface->SetArpCache (arpCache);
+  
   // create S1-U socket for the ENB
   Ptr<Socket> enbS1uSocket = Socket::CreateSocket (enb, TypeId::LookupByName ("ns3::UdpSocketFactory"));
   int retval = enbS1uSocket->Bind (InetSocketAddress (enbAddress, m_gtpuUdpPort));
@@ -594,8 +638,8 @@ TapEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevice, uint16_t ce
       Ptr<Packet> packet = Create<Packet> ();
       packet->AddHeader (addEnbRequestHeader);
       packet->AddHeader (tapEpcHelperHeader);
-      m_epcSlaveSocket->Send (packet);
-      // Simulator::Schedule (Seconds (5.0), static_cast<int (Socket::*)(Ptr<Packet>)>(&Socket::Send), m_epcSlaveSocket, packet); 
+      m_slaveSocket->Send (packet);
+      // Simulator::Schedule (Seconds (5.0), static_cast<int (Socket::*)(Ptr<Packet>)>(&Socket::Send), m_slaveSocket, packet); 
       NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
     }
 }
@@ -670,8 +714,8 @@ TapEpcHelper::AddUe (Ptr<NetDevice> ueDevice, uint64_t imsi)
       Ptr<Packet> packet = Create<Packet> ();
       packet->AddHeader (addUeRequestHeader);
       packet->AddHeader (tapEpcHelperHeader);
-      m_epcSlaveSocket->Send (packet);
-      // Simulator::Schedule (Seconds (10.0), static_cast<int (Socket::*)(Ptr<Packet>)>(&Socket::Send), m_epcSlaveSocket, packet); 
+      m_slaveSocket->Send (packet);
+      // Simulator::Schedule (Seconds (10.0), static_cast<int (Socket::*)(Ptr<Packet>)>(&Socket::Send), m_slaveSocket, packet); 
       NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
     }
 }
@@ -716,7 +760,7 @@ TapEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_t imsi, Ptr<Epc
       Ptr<Packet> packet = Create<Packet> ();
       packet->AddHeader (activateEpsBearerRequestHeader);
       packet->AddHeader (tapEpcHelperHeader);
-      m_epcSlaveSocket->Send (packet);
+      m_slaveSocket->Send (packet);
       NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
       bearerId = 1;
     }
@@ -753,22 +797,21 @@ TapEpcHelper::GetUeDefaultGatewayAddress ()
 Mac48Address
 TapEpcHelper::GetUeDefaultGatewayMacAddress ()
 {
-  return Mac48Address::ConvertFrom (m_ueDefaultGatewayMacAddress);
+  return Mac48Address (m_ueDefaultGatewayMacAddress.c_str ());
 }
 
 Mac48Address
-TapEpcHelper::AllocateMac48Address ()
+TapEpcHelper::AllocateMac48Address (uint64_t key)
 {
-  uint64_t id = ++m_mac48AddressBase;
   uint8_t buffer[6];
   
   Mac48Address address;
-  buffer[0] = (id >> 40) & 0xff;
-  buffer[1] = (id >> 32) & 0xff;
-  buffer[2] = (id >> 24) & 0xff;
-  buffer[3] = (id >> 16) & 0xff;
-  buffer[4] = (id >> 8) & 0xff;
-  buffer[5] = (id >> 0) & 0xff;
+  buffer[0] = (key >> 40) & 0xff;
+  buffer[1] = (key >> 32) & 0xff;
+  buffer[2] = (key >> 24) & 0xff;
+  buffer[3] = ((key >> 16) & 0xff) | 0xeb;
+  buffer[4] = (key >> 8) & 0xff;
+  buffer[5] = (key >> 0) & 0xff;
   address.CopyFrom (buffer);
 
   return address;

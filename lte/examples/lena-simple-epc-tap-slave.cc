@@ -53,13 +53,17 @@ main (int argc, char *argv[])
   uint16_t nUesPerEnb = 1;
   double simTime = 3600.1;
   double distance = 1000.0;
+  uint16_t imsiBase = 0;
+  uint16_t cellIdBase = 0;
 
   // Command line arguments
   CommandLine cmd;
   cmd.AddValue("nEnbs", "Number of eNBs", nEnbs);
   cmd.AddValue("nUesPerEnb", "Number of UEs per eNB", nUesPerEnb);
-  cmd.AddValue("simTime", "Total duration of the simulation [s])", simTime);
+  cmd.AddValue("simTime", "Total duration of the simulation [s]", simTime);
   cmd.AddValue("distance", "Distance between eNBs [m]", distance);
+  cmd.AddValue("imsiBase", "Base number of IMSI", imsiBase);
+  cmd.AddValue("cellIdBase", "Base number of CellId", cellIdBase);
   cmd.Parse(argc, argv);
 
   // let's go in real time
@@ -81,8 +85,8 @@ main (int argc, char *argv[])
   cmd.Parse(argc, argv);
 
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
-  lteHelper->SetImsiCounter (0x02);
-  lteHelper->SetCellIdCounter (0x02);
+  lteHelper->SetImsiCounter (imsiBase);
+  lteHelper->SetCellIdCounter (cellIdBase);
   
   Ptr<TapEpcHelper> epcHelper = CreateObject<TapEpcHelper> ();
   lteHelper->SetEpcHelper (epcHelper);
@@ -120,8 +124,8 @@ main (int argc, char *argv[])
   Ipv4InterfaceContainer ueIpIface;
   ueIpIface = epcHelper->AssignUeIpv4Address (NetDeviceContainer (ueLteDevs));
 
-  lteHelper->Attach (ueLteDevs);
-  // Simulator::Schedule (Seconds (5.0), static_cast<void (LteHelper::*)(NetDeviceContainer)>(&LteHelper::Attach), lteHelper, ueLteDevs); 
+  // lteHelper->Attach (ueLteDevs);
+  Simulator::Schedule (Seconds (5.0), static_cast<void (LteHelper::*)(NetDeviceContainer)>(&LteHelper::Attach), lteHelper, ueLteDevs); 
   // side effects: 1) use idle mode cell selection, 2) activate default EPS bearer
 
   // Add TapBridge on UE
@@ -130,7 +134,7 @@ main (int argc, char *argv[])
   for (uint32_t u = 0; u < ueLteDevs.GetN (); ++u)
     {
       std::ostringstream oss;
-      oss << "hs" << u + 1 << "-eth0";
+      oss << "h" << u + 1 + imsiBase << "-eth0";
       tapBridge.SetAttribute ("DeviceName", StringValue (oss.str ()));
       Address macAddress = Mac48Address::Allocate ();
       tapBridge.SetAttribute ("MacAddress", Mac48AddressValue (Mac48Address::ConvertFrom (macAddress)));

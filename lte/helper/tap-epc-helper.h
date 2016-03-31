@@ -97,18 +97,18 @@ public:
 private:
 
   void HandleS1apConnection (Ptr<Socket> socket, const Address &addr);
-  void HandleEpcMasterConnection (Ptr<Socket> socket, const Address &addr);
+  void HandleMasterConnection (Ptr<Socket> socket, const Address &addr);
   
   void RecvFromS1apSocket (Ptr<Socket> socket);
-  void RecvFromEpcMasterSocket (Ptr<Socket> socket);
-  void RecvFromEpcSlaveSocket (Ptr<Socket> socket);
+  void RecvFromMasterSocket (Ptr<Socket> socket);
+  void RecvFromSlaveSocket (Ptr<Socket> socket);
   
-  void HandleEpcMasterPacket (Ptr<Socket> socket, Ptr<Packet> packet);
+  void HandleMasterPacket (Ptr<Socket> socket, Ptr<Packet> packet);
   
   void MasterInitialize ();
   void SlaveInitialize ();
   
-  Mac48Address AllocateMac48Address ();
+  Mac48Address AllocateMac48Address (uint64_t key);
 
   /** 
    * helper to assign addresses to UE devices as well as to the TUN device of the SGW/PGW
@@ -122,9 +122,9 @@ private:
   
   Ptr<Node> m_mmeNode;
   
-  Ptr<Node> m_epcMaster;
+  Ptr<Node> m_master;
   
-  Ptr<Node> m_epcSlave;
+  Ptr<Node> m_slave;
 
   /**
    * SGW-PGW application
@@ -141,7 +141,7 @@ private:
    */
   Ptr<TapEpcMme> m_mme;
   
-  Ptr<Socket> m_epcSlaveSocket;
+  Ptr<Socket> m_slaveSocket;
 
   /** 
    * helper to assign addresses to S1-U NetDevices 
@@ -155,7 +155,7 @@ private:
   
   uint16_t m_s1apTcpPort;
   
-  uint16_t m_epcMasterTcpPort;
+  uint16_t m_masterTcpPort;
 
   /**
    * Map storing for each IMSI the corresponding eNB NetDevice
@@ -165,8 +165,14 @@ private:
   
   Ipv4Address m_sgwIpv4Address;
   Ipv4Address m_mmeIpv4Address;
-  Ipv4Address m_epcMasterIpv4Address;
-  Ipv4Address m_epcSlaveIpv4Address;
+  Ipv4Address m_masterIpv4Address;
+  Ipv4Address m_ueDefaultGatewayAddress;
+  
+  std::string m_ueDefaultGatewayMacAddress;
+  std::string m_tunMacAddress;
+  std::string m_sgwMacAddress;
+  std::string m_mmeMacAddress;
+  std::string m_masterMacAddress;
 
   /**
    * The name of the device used for the S1-U interface of the SGW
@@ -179,13 +185,8 @@ private:
   std::string m_enbDeviceName;
   
   std::string m_mmeDeviceName;
-  std::string m_epcMasterDeviceName;
-  std::string m_epcSlaveDeviceName;
-
-  /**
-   * The count of eNB
-   */
-  uint16_t m_enbCount;
+  std::string m_masterDeviceName;
+  std::string m_slaveDeviceName;
   
   std::string m_masterUeIpAddressBase;
   std::string m_slaveUeIpAddressBase;
@@ -193,12 +194,7 @@ private:
   std::string m_masterIpAddressBase;
   std::string m_slaveIpAddressBase;
   
-  uint64_t m_mac48AddressBase;
-  
   Mode m_mode;
-
-  Address m_ueDefaultGatewayMacAddress;
-  Ipv4Address m_ueDefaultGatewayAddress;
 
   // SystemCondition m_epcSlaveSocketCondition;
 };
