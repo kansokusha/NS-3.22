@@ -1,48 +1,48 @@
 
 #include <ns3/log.h>
-#include <ns3/tap-epc-helper-header.h>
+#include <ns3/epc-helper-header.h>
 
 namespace ns3 {
 
-NS_LOG_COMPONENT_DEFINE ("TapEpcHelperHeader");
+NS_LOG_COMPONENT_DEFINE ("EpcHelperHeader");
 
-NS_OBJECT_ENSURE_REGISTERED (TapEpcHelperHeader);
+NS_OBJECT_ENSURE_REGISTERED (EpcHelperHeader);
 
-TapEpcHelperHeader::TapEpcHelperHeader ()
+EpcHelperHeader::EpcHelperHeader ()
   : m_procedureCode (0x00),
     m_typeOfMessage (0x00)
 {
 }
 
-TapEpcHelperHeader::~TapEpcHelperHeader ()
+EpcHelperHeader::~EpcHelperHeader ()
 {
 }
 
 TypeId
-TapEpcHelperHeader::GetTypeId (void)
+EpcHelperHeader::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::TapEpcHelperHeader")
+  static TypeId tid = TypeId ("ns3::EpcHelperHeader")
     .SetParent<Header> ()
     .SetGroupName ("Lte")
-    .AddConstructor<TapEpcHelperHeader> ()
+    .AddConstructor<EpcHelperHeader> ()
   ;
   return tid;
 }
 
 TypeId
-TapEpcHelperHeader::GetInstanceTypeId (void) const
+EpcHelperHeader::GetInstanceTypeId (void) const
 {
   return GetTypeId ();
 }
 
 uint32_t
-TapEpcHelperHeader::GetSerializedSize (void) const
+EpcHelperHeader::GetSerializedSize (void) const
 {
   return 2;
 }
 
 void
-TapEpcHelperHeader::Serialize (Buffer::Iterator start) const
+EpcHelperHeader::Serialize (Buffer::Iterator start) const
 {
   Buffer::Iterator i = start;
   i.WriteU8 (m_procedureCode);
@@ -50,7 +50,7 @@ TapEpcHelperHeader::Serialize (Buffer::Iterator start) const
 }
 
 uint32_t
-TapEpcHelperHeader::Deserialize (Buffer::Iterator start)
+EpcHelperHeader::Deserialize (Buffer::Iterator start)
 {
   Buffer::Iterator i = start;
   m_procedureCode = i.ReadU8 ();
@@ -59,32 +59,32 @@ TapEpcHelperHeader::Deserialize (Buffer::Iterator start)
 }
 
 void
-TapEpcHelperHeader::Print (std::ostream &os) const
+EpcHelperHeader::Print (std::ostream &os) const
 {
   os << "ProcedureCode=" << m_procedureCode;
   os << "TypeOfMessage=" << m_typeOfMessage;
 }
 
 uint8_t
-TapEpcHelperHeader::GetTypeOfMessage () const
+EpcHelperHeader::GetTypeOfMessage () const
 {
   return m_typeOfMessage;
 }
 
 void
-TapEpcHelperHeader::SetTypeOfMessage (uint8_t typeOfMessage)
+EpcHelperHeader::SetTypeOfMessage (uint8_t typeOfMessage)
 {
   m_typeOfMessage = typeOfMessage;
 }
   
 uint8_t
-TapEpcHelperHeader::GetProcedureCode () const
+EpcHelperHeader::GetProcedureCode () const
 {
   return m_procedureCode;
 }
 
 void
-TapEpcHelperHeader::SetProcedureCode (uint8_t procedureCode)
+EpcHelperHeader::SetProcedureCode (uint8_t procedureCode)
 {
   m_procedureCode = procedureCode;
 }

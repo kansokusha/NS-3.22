@@ -83,14 +83,14 @@ EpcMme::GetS11SapMme ()
 }
 
 void 
-EpcMme::AddEnb (uint16_t gci, Ipv4Address enbS1uAddr, EpcS1apSapEnb* enbS1apSap)
+EpcMme::AddEnb (uint16_t cgi, Ipv4Address enbS1uAddr, EpcS1apSapEnb* enbS1apSap)
 {
-  NS_LOG_FUNCTION (this << gci << enbS1uAddr);
+  NS_LOG_FUNCTION (this << cgi << enbS1uAddr);
   Ptr<EnbInfo> enbInfo = Create<EnbInfo> ();
-  enbInfo->gci = gci;
+  enbInfo->cgi = cgi;
   enbInfo->s1uAddr = enbS1uAddr;
   enbInfo->s1apSapEnb = enbS1apSap;
-  m_enbInfoMap[gci] = enbInfo;
+  m_enbInfoMap[cgi] = enbInfo;
 }
 
 void 
@@ -123,15 +123,15 @@ EpcMme::AddBearer (uint64_t imsi, Ptr<EpcTft> tft, EpsBearer bearer)
 // S1-AP SAP MME forwarded methods
 
 void 
-EpcMme::DoInitialUeMessage (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, uint64_t imsi, uint16_t gci)
+EpcMme::DoInitialUeMessage (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, uint64_t imsi, uint16_t cgi)
 {
-  NS_LOG_FUNCTION (this << mmeUeS1Id << enbUeS1Id << imsi << gci);
+  NS_LOG_FUNCTION (this << mmeUeS1Id << enbUeS1Id << imsi << cgi);
   std::map<uint64_t, Ptr<UeInfo> >::iterator it = m_ueInfoMap.find (imsi);
   NS_ASSERT_MSG (it != m_ueInfoMap.end (), "could not find any UE with IMSI " << imsi);
-  it->second->cellId = gci;
+  it->second->cellId = cgi;
   EpcS11SapSgw::CreateSessionRequestMessage msg;
   msg.imsi = imsi;
-  msg. uli.gci = gci;
+  msg. uli.cgi = cgi;
   for (std::list<BearerInfo>::iterator bit = it->second->bearersToBeActivated.begin ();
        bit != it->second->bearersToBeActivated.end ();
        ++bit)
@@ -153,20 +153,20 @@ EpcMme::DoInitialContextSetupResponse (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, s
 }
 
 void 
-EpcMme::DoPathSwitchRequest (uint64_t enbUeS1Id, uint64_t mmeUeS1Id, uint16_t gci, std::list<EpcS1apSapMme::ErabSwitchedInDownlinkItem> erabToBeSwitchedInDownlinkList)
+EpcMme::DoPathSwitchRequest (uint64_t enbUeS1Id, uint64_t mmeUeS1Id, uint16_t cgi, std::list<EpcS1apSapMme::ErabSwitchedInDownlinkItem> erabToBeSwitchedInDownlinkList)
 {
-  NS_LOG_FUNCTION (this << mmeUeS1Id << enbUeS1Id << gci);
+  NS_LOG_FUNCTION (this << mmeUeS1Id << enbUeS1Id << cgi);
 
   uint64_t imsi = mmeUeS1Id; 
   std::map<uint64_t, Ptr<UeInfo> >::iterator it = m_ueInfoMap.find (imsi);
   NS_ASSERT_MSG (it != m_ueInfoMap.end (), "could not find any UE with IMSI " << imsi);
-  NS_LOG_INFO ("IMSI " << imsi << " old eNB: " << it->second->cellId << ", new eNB: " << gci);
-  it->second->cellId = gci;
+  NS_LOG_INFO ("IMSI " << imsi << " old eNB: " << it->second->cellId << ", new eNB: " << cgi);
+  it->second->cellId = cgi;
   it->second->enbUeS1Id = enbUeS1Id;
 
   EpcS11SapSgw::ModifyBearerRequestMessage msg;
   msg.teid = imsi; // trick to avoid the need for allocating TEIDs on the S11 interface
-  msg.uli.gci = gci;
+  msg.uli.cgi = cgi;
   // bearer modification is not supported for now
   m_s11SapSgw->ModifyBearerRequest (msg);
 }

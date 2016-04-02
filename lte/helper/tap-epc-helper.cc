@@ -21,7 +21,7 @@
  */
 
 #include <ns3/tap-epc-helper.h>
-#include <ns3/tap-epc-helper-header.h>
+#include <ns3/epc-helper-header.h>
 #include <ns3/log.h>
 #include <ns3/inet-socket-address.h>
 #include <ns3/mac48-address.h>
@@ -42,6 +42,7 @@
 #include <ns3/lte-enb-net-device.h>
 #include <ns3/lte-ue-net-device.h>
 #include <ns3/tap-epc-mme.h>
+#include <ns3/epc-s1ap-header.h>
 #include <ns3/epc-s1ap-sap.h>
 #include <ns3/epc-ue-nas.h>
 #include <ns3/string.h>
@@ -366,15 +367,15 @@ TapEpcHelper::RecvFromSlaveSocket (Ptr<Socket> socket)
   NS_LOG_FUNCTION (this);
   Ptr<Packet> packet = socket->Recv ();
   
-  TapEpcHelperHeader tapEpcHelperHeader;
-  packet->RemoveHeader (tapEpcHelperHeader);
+  EpcHelperHeader epcHelperHeader;
+  packet->RemoveHeader (epcHelperHeader);
   
-  uint8_t procedureCode = tapEpcHelperHeader.GetProcedureCode ();
-  uint8_t typeOfMessage = tapEpcHelperHeader.GetTypeOfMessage ();
+  uint8_t procedureCode = epcHelperHeader.GetProcedureCode ();
+  uint8_t typeOfMessage = epcHelperHeader.GetTypeOfMessage ();
   
-  if (procedureCode == TapEpcHelperHeader::ActivateEpsBearer)
+  if (procedureCode == EpcHelperHeader::ActivateEpsBearer)
     {
-      if (typeOfMessage == TapEpcHelperHeader::SuccessfulOutcome)
+      if (typeOfMessage == EpcHelperHeader::SuccessfulOutcome)
         {
           NS_LOG_LOGIC ("ActivateEpsBearerResponse");
           ActivateEpsBearerResponseHeader activateEpsBearerResponseHeader;
@@ -396,15 +397,15 @@ TapEpcHelper::RecvFromMasterSocket (Ptr<Socket> socket)
 void
 TapEpcHelper::HandleMasterPacket (Ptr<Socket> socket, Ptr<Packet> packet)
 {
-  TapEpcHelperHeader tapEpcHelperHeader;
-  packet->RemoveHeader (tapEpcHelperHeader);
+  EpcHelperHeader epcHelperHeader;
+  packet->RemoveHeader (epcHelperHeader);
   
-  uint8_t procedureCode = tapEpcHelperHeader.GetProcedureCode ();
-  uint8_t typeOfMessage = tapEpcHelperHeader.GetTypeOfMessage ();
+  uint8_t procedureCode = epcHelperHeader.GetProcedureCode ();
+  uint8_t typeOfMessage = epcHelperHeader.GetTypeOfMessage ();
   
-  if (procedureCode == TapEpcHelperHeader::AddUe)
+  if (procedureCode == EpcHelperHeader::AddUe)
     {
-      if (typeOfMessage == TapEpcHelperHeader::InitiatingMessage)
+      if (typeOfMessage == EpcHelperHeader::InitiatingMessage)
         {
           NS_LOG_LOGIC ("AddUeRequest");
           AddUeRequestHeader addUeRequestHeader;
@@ -415,9 +416,9 @@ TapEpcHelper::HandleMasterPacket (Ptr<Socket> socket, Ptr<Packet> packet)
           m_sgwPgwApp->AddUe (imsi);
         }
     }
-  else if (procedureCode == TapEpcHelperHeader::AddEnb)
+  else if (procedureCode == EpcHelperHeader::AddEnb)
     {
-      if (typeOfMessage == TapEpcHelperHeader::InitiatingMessage)
+      if (typeOfMessage == EpcHelperHeader::InitiatingMessage)
         {
           NS_LOG_LOGIC ("AddEnbRequest");
           AddEnbRequestHeader addEnbRequestHeader;
@@ -431,9 +432,9 @@ TapEpcHelper::HandleMasterPacket (Ptr<Socket> socket, Ptr<Packet> packet)
           m_sgwPgwApp->AddEnb (cellId, enbAddress, sgwAddress);
         }
     }
-  else if (procedureCode == TapEpcHelperHeader::ActivateEpsBearer)
+  else if (procedureCode == EpcHelperHeader::ActivateEpsBearer)
     {
-      if (typeOfMessage == TapEpcHelperHeader::InitiatingMessage)
+      if (typeOfMessage == EpcHelperHeader::InitiatingMessage)
         {
           NS_LOG_LOGIC ("ActivateEpsBearerRequest");
           ActivateEpsBearerRequestHeader activateEpsBearerRequestHeader;
@@ -450,15 +451,17 @@ TapEpcHelper::HandleMasterPacket (Ptr<Socket> socket, Ptr<Packet> packet)
           uint8_t bearerId = m_mme->AddBearer (imsi, tft, bearer);
           NS_LOG_LOGIC ("bearerId = " << (int) bearerId);
           
-          tapEpcHelperHeader.SetProcedureCode (TapEpcHelperHeader::ActivateEpsBearer);
-          tapEpcHelperHeader.SetTypeOfMessage (TapEpcHelperHeader::SuccessfulOutcome);
+          /*
+          epcHelperHeader.SetProcedureCode (EpcHelperHeader::ActivateEpsBearer);
+          epcHelperHeader.SetTypeOfMessage (EpcHelperHeader::SuccessfulOutcome);
           
           ActivateEpsBearerResponseHeader activateEpsBearerResponseHeader;
           activateEpsBearerResponseHeader.SetBearerId (bearerId);
       
           Ptr<Packet> responsePacket = Create<Packet> ();
           responsePacket->AddHeader (activateEpsBearerResponseHeader);
-          responsePacket->AddHeader (tapEpcHelperHeader);
+          responsePacket->AddHeader (epcHelperHeader);
+          */
           // socket->Send (packet);
         }
     }
@@ -475,53 +478,74 @@ TapEpcHelper::RecvFromS1apSocket (Ptr<Socket> socket)
   NS_LOG_FUNCTION (this);
   Ptr<Packet> packet = socket->Recv ();
   NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
-  uint8_t *data = new uint8_t [packet->GetSize ()];
-  packet->CopyData (data, packet->GetSize ());
-  if (data[0] == EpcS1apSap::InitialUeMessage && data[1] == EpcS1apSap::InitiatingMessage)
+  HandleS1apPacket (socket, packet);
+}
+
+void
+TapEpcHelper::HandleS1apPacket (Ptr<Socket> socket, Ptr<Packet> packet)
+{
+  EpcS1apHeader EpcS1apHeader;
+  packet->RemoveHeader (EpcS1apHeader);
+  
+  uint8_t procedureCode = EpcS1apHeader.GetProcedureCode ();
+  uint8_t typeOfMessage = EpcS1apHeader.GetTypeOfMessage ();
+  
+  if (procedureCode == EpcS1apHeader::InitialUeMessage)
     {
-      NS_LOG_LOGIC ("InitialUeMessage");
-      EpcS1apSapMme::InitialUeRequestMessage message;
-      std::memcpy (&message, data, sizeof message);
-      uint64_t mmeUeS1Id = message.mmeUeS1Id;
-      uint16_t enbUeS1Id = message.enbUeS1Id;
-      uint64_t imsi = message.stmsi;
-      uint16_t ecgi = message.ecgi;
-      m_mme->InitialUeMessage (mmeUeS1Id, enbUeS1Id, imsi, ecgi);
-    }
-  else if (data[0] == EpcS1apSap::PathSwitchRequest && data[1] == EpcS1apSap::InitiatingMessage)
-    {
-      NS_LOG_LOGIC ("PathSwitchRequest");
-      EpcS1apSapMme::PathSwitchRequestMessage message;
-      std::memcpy (&message, data, sizeof message);
-      uint64_t enbUeS1Id = message.enbUeS1Id;
-      uint64_t mmeUeS1Id = message.mmeUeS1Id;
-      uint16_t gci = message.gci;
-      std::list<EpcS1apSapMme::ErabSwitchedInDownlinkItem> erabToBeSwitchedInDownlinkList;
-      EpcS1apSapMme::ErabSwitchedInDownlinkItem item;
-      for (uint8_t *i = data + sizeof message; i < data + packet->GetSize (); i = i + sizeof item)
+      if (typeOfMessage == EpcS1apHeader::InitiatingMessage)
         {
-          std::memcpy (&item, i, sizeof item);
-          erabToBeSwitchedInDownlinkList.push_back (item);
+          NS_LOG_LOGIC ("InitialUeMessage");
+          InitialUeRequestHeader initialUeRequestHeader;
+          packet->RemoveHeader (initialUeRequestHeader);
+          
+          uint64_t mmeUeS1Id = initialUeRequestHeader.GetMmeUeS1Id ();
+          uint16_t enbUeS1Id = initialUeRequestHeader.GetEnbUeS1Id ();
+          uint64_t imsi = initialUeRequestHeader.GetStmsi ();
+          uint16_t ecgi = initialUeRequestHeader.GetEcgi ();
+          
+          m_mme->InitialUeMessage (mmeUeS1Id, enbUeS1Id, imsi, ecgi);
         }
-      m_mme->PathSwitchRequest (enbUeS1Id, mmeUeS1Id, gci, erabToBeSwitchedInDownlinkList);
     }
-  else if (data[0] == EpcS1apSap::ErabRelease && data[1] == EpcS1apSap::InitiatingMessage)
+  else if (procedureCode == EpcS1apHeader::PathSwitchRequest)
     {
-      NS_LOG_LOGIC ("ErabRelease");
-      EpcS1apSapMme::ErabReleaseIndicationMessage message;
-      std::memcpy (&message, data, sizeof message);
-      uint64_t imsi = message.mmeUeS1Id;
-      uint16_t rnti = message.enbUeS1Id;
-      std::list<EpcS1apSapMme::ErabToBeReleasedIndication> erabToBeReleaseIndication;
-      EpcS1apSapMme::ErabToBeReleasedIndication indication;
-      for (uint8_t *i = data + sizeof message; i < data + packet->GetSize (); i = i + sizeof indication)
+      if (typeOfMessage == EpcS1apHeader::InitiatingMessage)
         {
-          std::memcpy (&indication, i, sizeof indication);
-          erabToBeReleaseIndication.push_back (indication);
+          NS_LOG_LOGIC ("PathSwitchRequest");
+          PathSwitchRequestHeader pathSwitchRequestHeader;
+          packet->RemoveHeader (pathSwitchRequestHeader);
+          
+          uint64_t enbUeS1Id = pathSwitchRequestHeader.GetEnbUeS1Id ();
+          uint64_t mmeUeS1Id = pathSwitchRequestHeader.GetMmeUeS1Id ();
+          uint16_t cgi = pathSwitchRequestHeader.GetCgi ();
+          
+          std::list<EpcS1apSapMme::ErabSwitchedInDownlinkItem> erabToBeSwitchedInDownlinkList;
+          erabToBeSwitchedInDownlinkList = pathSwitchRequestHeader.GetErabToBeSwitchedInDownlinkList ();
+          
+          m_mme->PathSwitchRequest (enbUeS1Id, mmeUeS1Id, cgi, erabToBeSwitchedInDownlinkList);
         }
-      m_mme->ErabReleaseIndication (imsi, rnti, erabToBeReleaseIndication);
     }
-  delete [] data;
+  else if (procedureCode == EpcS1apHeader::ErabRelease)
+    {
+      if (typeOfMessage == EpcS1apHeader::InitiatingMessage)
+        {
+          NS_LOG_LOGIC ("ErabRelease");
+          ErabReleaseIndicationHeader erabReleaseIndicationHeader;
+          packet->RemoveHeader (erabReleaseIndicationHeader);
+          
+          uint64_t imsi = erabReleaseIndicationHeader.GetMmeUeS1Id ();
+          uint16_t rnti = erabReleaseIndicationHeader.GetEnbUeS1Id ();
+          
+          std::list<EpcS1apSapMme::ErabToBeReleasedIndication> erabToBeReleaseIndication;
+          erabToBeReleaseIndication =  erabReleaseIndicationHeader.GetErabToBeReleaseIndication ();
+          
+          m_mme->ErabReleaseIndication (imsi, rnti, erabToBeReleaseIndication);
+        }
+    }
+  
+  if (packet->GetSize () != 0)
+    {
+      HandleMasterPacket (socket, packet);
+    }
 }
 
 void
@@ -626,9 +650,9 @@ TapEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevice, uint16_t ce
     }
   else if(m_mode == Slave)
     {
-      TapEpcHelperHeader tapEpcHelperHeader;
-      tapEpcHelperHeader.SetProcedureCode (TapEpcHelperHeader::AddEnb);
-      tapEpcHelperHeader.SetTypeOfMessage (TapEpcHelperHeader::InitiatingMessage);
+      EpcHelperHeader epcHelperHeader;
+      epcHelperHeader.SetProcedureCode (EpcHelperHeader::AddEnb);
+      epcHelperHeader.SetTypeOfMessage (EpcHelperHeader::InitiatingMessage);
     
       AddEnbRequestHeader addEnbRequestHeader;
       addEnbRequestHeader.SetCellId (cellId);
@@ -637,7 +661,7 @@ TapEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevice, uint16_t ce
       
       Ptr<Packet> packet = Create<Packet> ();
       packet->AddHeader (addEnbRequestHeader);
-      packet->AddHeader (tapEpcHelperHeader);
+      packet->AddHeader (epcHelperHeader);
       m_slaveSocket->Send (packet);
       // Simulator::Schedule (Seconds (5.0), static_cast<int (Socket::*)(Ptr<Packet>)>(&Socket::Send), m_slaveSocket, packet); 
       NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
@@ -704,16 +728,16 @@ TapEpcHelper::AddUe (Ptr<NetDevice> ueDevice, uint64_t imsi)
     }
   else if(m_mode == Slave)
     {
-      TapEpcHelperHeader tapEpcHelperHeader;
-      tapEpcHelperHeader.SetProcedureCode (TapEpcHelperHeader::AddUe);
-      tapEpcHelperHeader.SetTypeOfMessage (TapEpcHelperHeader::InitiatingMessage);
+      EpcHelperHeader epcHelperHeader;
+      epcHelperHeader.SetProcedureCode (EpcHelperHeader::AddUe);
+      epcHelperHeader.SetTypeOfMessage (EpcHelperHeader::InitiatingMessage);
     
       AddUeRequestHeader addUeRequestHeader;
       addUeRequestHeader.SetImsi (imsi);
       
       Ptr<Packet> packet = Create<Packet> ();
       packet->AddHeader (addUeRequestHeader);
-      packet->AddHeader (tapEpcHelperHeader);
+      packet->AddHeader (epcHelperHeader);
       m_slaveSocket->Send (packet);
       // Simulator::Schedule (Seconds (10.0), static_cast<int (Socket::*)(Ptr<Packet>)>(&Socket::Send), m_slaveSocket, packet); 
       NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
@@ -747,9 +771,9 @@ TapEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_t imsi, Ptr<Epc
     {
       EpcTft epcTft = *tft;
     
-      TapEpcHelperHeader tapEpcHelperHeader;
-      tapEpcHelperHeader.SetProcedureCode (TapEpcHelperHeader::ActivateEpsBearer);
-      tapEpcHelperHeader.SetTypeOfMessage (TapEpcHelperHeader::InitiatingMessage);
+      EpcHelperHeader epcHelperHeader;
+      epcHelperHeader.SetProcedureCode (EpcHelperHeader::ActivateEpsBearer);
+      epcHelperHeader.SetTypeOfMessage (EpcHelperHeader::InitiatingMessage);
     
       ActivateEpsBearerRequestHeader activateEpsBearerRequestHeader;
       activateEpsBearerRequestHeader.SetImsi (imsi);
@@ -759,7 +783,7 @@ TapEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_t imsi, Ptr<Epc
       
       Ptr<Packet> packet = Create<Packet> ();
       packet->AddHeader (activateEpsBearerRequestHeader);
-      packet->AddHeader (tapEpcHelperHeader);
+      packet->AddHeader (epcHelperHeader);
       m_slaveSocket->Send (packet);
       NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
       bearerId = 1;

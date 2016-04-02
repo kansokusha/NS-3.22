@@ -97,6 +97,7 @@ def build(bld):
         'model/lte-vendor-specific-parameters.cc',
         'model/epc-enb-s1-sap.cc',
         'model/epc-s1ap-sap.cc',
+        'model/epc-s1ap-header.cc',
         'model/epc-s11-sap.cc',
         'model/lte-as-sap.cc',
         'model/epc-ue-nas.cc',
@@ -274,6 +275,7 @@ def build(bld):
         'model/lte-mi-error-model.h',
         'model/epc-enb-s1-sap.h',
         'model/epc-s1ap-sap.h',
+        'model/epc-s1ap-header.h',
         'model/epc-s11-sap.h',
         'model/lte-as-sap.h',
         'model/epc-ue-nas.h',
@@ -305,11 +307,11 @@ def build(bld):
     if (bld.env['ENABLE_EMU']):
         module.source.append ('helper/emu-epc-helper.cc')
         module.source.append ('helper/tap-epc-helper.cc')
-        module.source.append ('helper/tap-epc-helper-header.cc')
+        module.source.append ('helper/epc-helper-header.cc')
         module.source.append ('helper/tap-bridge-epc-helper.cc')
         headers.source.append ('helper/emu-epc-helper.h')
         headers.source.append ('helper/tap-epc-helper.h')
-        headers.source.append ('helper/tap-epc-helper-header.h')
+        headers.source.append ('helper/epc-helper-header.h')
         headers.source.append ('helper/tap-bridge-epc-helper.h')
 
     if (bld.env['ENABLE_EXAMPLES']):

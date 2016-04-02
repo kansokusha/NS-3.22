@@ -25,6 +25,7 @@
 #include <ns3/packet.h>
 
 #include <ns3/epc-s1ap-sap.h>
+#include <ns3/epc-s1ap-header.h>
 #include <ns3/epc-s11-sap.h>
 
 namespace ns3 {
@@ -84,14 +85,14 @@ TapEpcMme::AddS1apSocket (Address addr, Ptr<Socket> socket)
 }
 
 void 
-TapEpcMme::AddEnb (uint16_t gci, Ipv4Address enbS1uAddr, Ipv4Address enbS1apAddr)
+TapEpcMme::AddEnb (uint16_t cgi, Ipv4Address enbS1uAddr, Ipv4Address enbS1apAddr)
 {
-  NS_LOG_FUNCTION (this << gci << enbS1uAddr);
+  NS_LOG_FUNCTION (this << cgi << enbS1uAddr);
   Ptr<EnbInfo> enbInfo = Create<EnbInfo> ();
-  enbInfo->gci = gci;
+  enbInfo->cgi = cgi;
   enbInfo->s1uAddr = enbS1uAddr;
   enbInfo->s1apAddr = enbS1apAddr;
-  m_enbInfoMap[gci] = enbInfo;
+  m_enbInfoMap[cgi] = enbInfo;
 }
 
 void 
@@ -122,16 +123,16 @@ TapEpcMme::AddBearer (uint64_t imsi, Ptr<EpcTft> tft, EpsBearer bearer)
 
 // S1-AP SAP MME forwarded methods
 void 
-TapEpcMme::DoInitialUeMessage (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, uint64_t imsi, uint16_t gci)
+TapEpcMme::DoInitialUeMessage (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, uint64_t imsi, uint16_t cgi)
 {
-  // mmeUeS1Id = imsi, enbUeS1Id = rnti, imsi = imsi, gci = m_cellId
-  NS_LOG_FUNCTION (this << mmeUeS1Id << enbUeS1Id << imsi << gci);
+  // mmeUeS1Id = imsi, enbUeS1Id = rnti, imsi = imsi, cgi = m_cellId
+  NS_LOG_FUNCTION (this << mmeUeS1Id << enbUeS1Id << imsi << cgi);
   std::map<uint64_t, Ptr<UeInfo> >::iterator it = m_ueInfoMap.find (imsi);
   NS_ASSERT_MSG (it != m_ueInfoMap.end (), "could not find any UE with IMSI " << imsi);
-  it->second->cellId = gci;
+  it->second->cellId = cgi;
   EpcS11SapSgw::CreateSessionRequestMessage msg;
   msg.imsi = imsi;
-  msg.uli.gci = gci;
+  msg.uli.cgi = cgi;
   for (std::list<BearerInfo>::iterator bit = it->second->bearersToBeActivated.begin ();
        bit != it->second->bearersToBeActivated.end ();
        ++bit)
@@ -153,20 +154,20 @@ TapEpcMme::DoInitialContextSetupResponse (uint64_t mmeUeS1Id, uint16_t enbUeS1Id
 }
 
 void
-TapEpcMme::DoPathSwitchRequest (uint64_t enbUeS1Id, uint64_t mmeUeS1Id, uint16_t gci, std::list<EpcS1apSapMme::ErabSwitchedInDownlinkItem> erabToBeSwitchedInDownlinkList)
+TapEpcMme::DoPathSwitchRequest (uint64_t enbUeS1Id, uint64_t mmeUeS1Id, uint16_t cgi, std::list<EpcS1apSapMme::ErabSwitchedInDownlinkItem> erabToBeSwitchedInDownlinkList)
 {
-  NS_LOG_FUNCTION (this << mmeUeS1Id << enbUeS1Id << gci);
+  NS_LOG_FUNCTION (this << mmeUeS1Id << enbUeS1Id << cgi);
 
-  uint64_t imsi = mmeUeS1Id; 
+  uint64_t imsi = mmeUeS1Id;
   std::map<uint64_t, Ptr<UeInfo> >::iterator it = m_ueInfoMap.find (imsi);
   NS_ASSERT_MSG (it != m_ueInfoMap.end (), "could not find any UE with IMSI " << imsi);
-  NS_LOG_INFO ("IMSI " << imsi << " old eNB: " << it->second->cellId << ", new eNB: " << gci);
-  it->second->cellId = gci;
+  NS_LOG_INFO ("IMSI " << imsi << " old eNB: " << it->second->cellId << ", new eNB: " << cgi);
+  it->second->cellId = cgi;
   it->second->enbUeS1Id = enbUeS1Id;
 
   EpcS11SapSgw::ModifyBearerRequestMessage msg;
   msg.teid = imsi; // trick to avoid the need for allocating TEIDs on the S11 interface
-  msg.uli.gci = gci;
+  msg.uli.cgi = cgi;
   // bearer modification is not supported for now
   m_s11SapSgw->ModifyBearerRequest (msg);
 }
@@ -196,28 +197,22 @@ TapEpcMme::DoCreateSessionResponse (EpcS11SapMme::CreateSessionResponseMessage m
   uint64_t mmeUeS1Id = it->second->mmeUeS1Id;
   std::map<uint16_t, Ptr<EnbInfo> >::iterator jt = m_enbInfoMap.find (cellId);
   NS_ASSERT_MSG (jt != m_enbInfoMap.end (), "could not find any eNB with CellId " << cellId);
-  
+
   Ipv4Address enbS1apAddr = jt->second->s1apAddr;
   Ptr<Socket> s1apSocket = m_s1apSocketMap[enbS1apAddr.Get ()];
   
-  EpcS1apSapEnb::InitialContextSetupRequestMessage message;
-  message.procedureCode = EpcS1apSap::InitialContextSetup;
-  message.typeOfMessage = EpcS1apSap::InitiatingMessage;
-  message.mmeUeS1Id = mmeUeS1Id;
-  message.enbUeS1Id = enbUeS1Id;
+  EpcS1apHeader epcS1apHeader;
+  epcS1apHeader.SetProcedureCode (EpcS1apHeader::InitialContextSetup);
+  epcS1apHeader.SetTypeOfMessage (EpcS1apHeader::InitiatingMessage);
   
-  size_t sizeofList = erabToBeSetupList.size () * sizeof(EpcS1apSapEnb::ErabToBeSetupItem);
-  uint8_t *data = new uint8_t [sizeof message + sizeofList];
-  std::memcpy (data, &message, sizeof message);
-  EpcS1apSapEnb::ErabToBeSetupItem item;
-  for (std::size_t i = 0; i < erabToBeSetupList.size (); ++i)
-    {
-      item = erabToBeSetupList.front ();
-      std::memcpy (data + sizeof message + (i * sizeof item), &item, sizeof item);
-      erabToBeSetupList.pop_front ();
-    }
-  Ptr<Packet> packet = Create<Packet> (data, sizeof message + sizeofList);
-  delete [] data;
+  InitialContextSetupRequestHeader initialContextSetupRequestHeader;
+  initialContextSetupRequestHeader.SetMmeUeS1Id (mmeUeS1Id);
+  initialContextSetupRequestHeader.SetEnbUeS1Id (enbUeS1Id);
+  initialContextSetupRequestHeader.SetErabToBeSetupList (erabToBeSetupList);
+
+  Ptr<Packet> packet = Create<Packet> ();
+  packet->AddHeader (initialContextSetupRequestHeader);
+  packet->AddHeader (epcS1apHeader);
   s1apSocket->Send (packet);
 }
 
@@ -235,29 +230,23 @@ TapEpcMme::DoModifyBearerResponse (EpcS11SapMme::ModifyBearerResponseMessage msg
   std::list<EpcS1apSapEnb::ErabSwitchedInUplinkItem> erabToBeSwitchedInUplinkList; // unused for now
   std::map< uint16_t, Ptr<EnbInfo> >::iterator jt = m_enbInfoMap.find (it->second->cellId);
   NS_ASSERT_MSG (jt != m_enbInfoMap.end (), "could not find any eNB with CellId " << it->second->cellId);
-  
+
   Ipv4Address enbS1apAddr = jt->second->s1apAddr;
   Ptr<Socket> s1apSocket = m_s1apSocketMap[enbS1apAddr.Get ()];
-
-  EpcS1apSapEnb::PathSwitchRequestAcknowledgeMessage message;
-  message.procedureCode = EpcS1apSap::PathSwitchRequest;
-  message.typeOfMessage = EpcS1apSap::SuccessfulOutcome;
-  message.mmeUeS1Id = mmeUeS1Id;
-  message.enbUeS1Id = enbUeS1Id;
-  message.cgi = cgi;
   
-  size_t sizeofList = erabToBeSwitchedInUplinkList.size () * sizeof(EpcS1apSapEnb::ErabSwitchedInUplinkItem);
-  uint8_t *data = new uint8_t [sizeof message + sizeofList];
-  std::memcpy (data, &message, sizeof message);
-  EpcS1apSapEnb::ErabSwitchedInUplinkItem item;
-  for (std::size_t i = 0; i < erabToBeSwitchedInUplinkList.size (); ++i)
-    {
-      item = erabToBeSwitchedInUplinkList.front ();
-      std::memcpy (data + sizeof message + (i * sizeof item), &item, sizeof item);
-      erabToBeSwitchedInUplinkList.pop_front ();
-    }
-  Ptr<Packet> packet = Create<Packet> (data, sizeof message + sizeofList);
-  delete [] data;
+  EpcS1apHeader epcS1apHeader;
+  epcS1apHeader.SetProcedureCode (EpcS1apHeader::PathSwitchRequest);
+  epcS1apHeader.SetTypeOfMessage (EpcS1apHeader::SuccessfulOutcome);
+  
+  PathSwitchRequestAcknowledgeHeader pathSwitchRequestAcknowledgeHeader;
+  pathSwitchRequestAcknowledgeHeader.SetMmeUeS1Id (mmeUeS1Id);
+  pathSwitchRequestAcknowledgeHeader.SetEnbUeS1Id (enbUeS1Id);
+  pathSwitchRequestAcknowledgeHeader.SetCgi (cgi);
+  pathSwitchRequestAcknowledgeHeader.SetErabToBeSwitchedInUplinkList (erabToBeSwitchedInUplinkList);
+
+  Ptr<Packet> packet = Create<Packet> ();
+  packet->AddHeader (pathSwitchRequestAcknowledgeHeader);
+  packet->AddHeader (epcS1apHeader);
   s1apSocket->Send (packet);
 }
 

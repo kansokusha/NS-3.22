@@ -57,7 +57,7 @@ public:
    */
   struct Uli
   {
-    uint16_t gci;
+    uint16_t cgi;
   };
   
  

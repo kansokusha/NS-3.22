@@ -23,7 +23,7 @@
 
 #include <ns3/object.h>
 #include <ns3/socket.h>
-#include <ns3/epc-s1ap-sap.h>
+#include <ns3/epc-s1ap-header.h>
 #include <ns3/epc-s11-sap.h>
 
 #include <map>
@@ -161,7 +161,7 @@ private:
    */
   struct EnbInfo : public SimpleRefCount<EnbInfo>
   {
-    uint16_t gci;
+    uint16_t cgi;
     Ipv4Address s1uAddr;
     Ipv4Address s1apAddr;
   };

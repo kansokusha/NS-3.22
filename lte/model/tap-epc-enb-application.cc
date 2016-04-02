@@ -123,18 +123,19 @@ TapEpcEnbApplication::DoInitialUeMessage (uint64_t imsi, uint16_t rnti)
   // side effect: create entry if not exist
   m_imsiRntiMap[imsi] = rnti;
   
-  EpcS1apSapMme::InitialUeRequestMessage message;
-  message.procedureCode = EpcS1apSap::InitialUeMessage;
-  message.typeOfMessage = EpcS1apSap::InitiatingMessage;
-  message.mmeUeS1Id = imsi;
-  message.enbUeS1Id = rnti;
-  message.stmsi = imsi;
-  message.ecgi = m_cellId;
+  EpcS1apHeader epcS1apHeader;
+  epcS1apHeader.SetProcedureCode (EpcS1apHeader::InitialUeMessage);
+  epcS1apHeader.SetTypeOfMessage (EpcS1apHeader::InitiatingMessage);
   
-  uint8_t *data = new uint8_t [sizeof message];
-  std::memcpy (data, &message, sizeof message);
-  Ptr<Packet> packet = Create<Packet> (data, sizeof message);
-  delete [] data;
+  InitialUeRequestHeader initialUeRequestHeader;
+  initialUeRequestHeader.SetMmeUeS1Id (imsi);
+  initialUeRequestHeader.SetEnbUeS1Id (rnti);
+  initialUeRequestHeader.SetStmsi (imsi);
+  initialUeRequestHeader.SetEcgi (m_cellId);
+  
+  Ptr<Packet> packet = Create<Packet> ();
+  packet->AddHeader (initialUeRequestHeader);
+  packet->AddHeader (epcS1apHeader);
   SendToS1apSocket (packet);
 }
 
@@ -148,7 +149,7 @@ TapEpcEnbApplication::DoPathSwitchRequest (EpcEnbS1SapProvider::PathSwitchReques
   // side effect: create entry if not exist
   m_imsiRntiMap[imsi] = params.rnti;
 
-  uint16_t gci = params.cellId;
+  uint16_t cgi = params.cellId;
   std::list<EpcS1apSapMme::ErabSwitchedInDownlinkItem> erabToBeSwitchedInDownlinkList;
   for (std::list<EpcEnbS1SapProvider::BearerToBeSwitched>::iterator bit = params.bearersToBeSwitched.begin ();
        bit != params.bearersToBeSwitched.end ();
@@ -171,25 +172,20 @@ TapEpcEnbApplication::DoPathSwitchRequest (EpcEnbS1SapProvider::PathSwitchReques
 
       erabToBeSwitchedInDownlinkList.push_back (erab);
     }
+    
+  EpcS1apHeader epcS1apHeader;
+  epcS1apHeader.SetProcedureCode (EpcS1apHeader::PathSwitchRequest);
+  epcS1apHeader.SetTypeOfMessage (EpcS1apHeader::InitiatingMessage);
   
-  EpcS1apSapMme::PathSwitchRequestMessage message;
-  message.procedureCode = EpcS1apSap::PathSwitchRequest;
-  message.typeOfMessage = EpcS1apSap::InitiatingMessage;
-  message.enbUeS1Id = enbUeS1Id;
-  message.mmeUeS1Id = mmeUeS1Id;
-  message.gci = gci;
+  PathSwitchRequestHeader pathSwitchRequestHeader;
+  pathSwitchRequestHeader.SetMmeUeS1Id (mmeUeS1Id);
+  pathSwitchRequestHeader.SetEnbUeS1Id (enbUeS1Id);
+  pathSwitchRequestHeader.SetCgi (cgi);
+  pathSwitchRequestHeader.SetErabToBeSwitchedInDownlinkList (erabToBeSwitchedInDownlinkList);
   
-  size_t sizeofList = erabToBeSwitchedInDownlinkList.size () * sizeof(EpcS1apSapMme::ErabSwitchedInDownlinkItem);
-  uint8_t *data = new uint8_t [sizeof message + sizeofList];
-  std::memcpy (data, &message, sizeof message);
-  for (std::size_t i = 0; i < erabToBeSwitchedInDownlinkList.size (); ++i)
-    {
-      EpcS1apSapMme::ErabSwitchedInDownlinkItem item = erabToBeSwitchedInDownlinkList.front ();
-      std::memcpy (data + sizeof message + (i * sizeof item), &item, sizeof item);
-      erabToBeSwitchedInDownlinkList.pop_front ();
-    }
-  Ptr<Packet> packet = Create<Packet> (data, sizeof message + sizeofList);
-  delete [] data;
+  Ptr<Packet> packet = Create<Packet> ();
+  packet->AddHeader (pathSwitchRequestHeader);
+  packet->AddHeader (epcS1apHeader);
   SendToS1apSocket (packet);
 }
 
@@ -242,7 +238,7 @@ TapEpcEnbApplication::DoInitialContextSetupRequest (uint64_t mmeUeS1Id, uint16_t
 }
 
 void 
-TapEpcEnbApplication::DoPathSwitchRequestAcknowledge (uint64_t enbUeS1Id, uint64_t mmeUeS1Id, uint16_t gci, std::list<EpcS1apSapEnb::ErabSwitchedInUplinkItem> erabToBeSwitchedInUplinkList)
+TapEpcEnbApplication::DoPathSwitchRequestAcknowledge (uint64_t enbUeS1Id, uint64_t mmeUeS1Id, uint16_t cgi, std::list<EpcS1apSapEnb::ErabSwitchedInUplinkItem> erabToBeSwitchedInUplinkList)
 {
   NS_LOG_FUNCTION (this);
 
@@ -314,42 +310,56 @@ TapEpcEnbApplication::RecvFromS1apSocket (Ptr<Socket> socket)
   NS_LOG_FUNCTION (this);
   NS_ASSERT (socket == m_s1apSocket);
   Ptr<Packet> packet = socket->Recv ();
-  uint8_t *data = new uint8_t [packet->GetSize ()];
-  packet->CopyData (data, packet->GetSize ());
-  if (data[0] == EpcS1apSap::InitialContextSetup && data[1] == EpcS1apSap::InitiatingMessage)
+  NS_LOG_LOGIC ("Packet size = " << packet->GetSize ());
+  HandleS1apPacket (socket, packet);
+}
+
+void
+TapEpcEnbApplication::HandleS1apPacket (Ptr<Socket> socket, Ptr<Packet> packet)
+{
+  EpcS1apHeader epcS1apHeader;
+  packet->RemoveHeader (epcS1apHeader);
+  
+  uint8_t procedureCode = epcS1apHeader.GetProcedureCode ();
+  uint8_t typeOfMessage = epcS1apHeader.GetTypeOfMessage ();
+  
+  if (procedureCode == EpcS1apHeader::InitialContextSetup)
     {
-      NS_LOG_LOGIC ("INITIAL_CONTEXT_SETUP");
-      EpcS1apSapEnb::InitialContextSetupRequestMessage message;
-      std::memcpy (&message, data, sizeof message);
-      uint64_t mmeUeS1Id = message.mmeUeS1Id;
-      uint16_t enbUeS1Id = message.enbUeS1Id;
-      std::list<EpcS1apSapEnb::ErabToBeSetupItem> erabToBeSetupList;
-      EpcS1apSapEnb::ErabToBeSetupItem item;
-      for (uint8_t *i = data + sizeof message; i < data + packet->GetSize (); i = i + sizeof item)
-      {
-        std::memcpy (&item, i, sizeof item);
-        erabToBeSetupList.push_back (item);
-      }
-      DoInitialContextSetupRequest (mmeUeS1Id, enbUeS1Id, erabToBeSetupList);
-    }
-  else if (data[0] == EpcS1apSap::PathSwitchRequest && data[1] == EpcS1apSap::SuccessfulOutcome)
-    {
-      NS_LOG_LOGIC ("PATH_SWITCH_REQUEST");
-      EpcS1apSapEnb::PathSwitchRequestAcknowledgeMessage message;
-      std::memcpy (&message, data, sizeof message);
-      uint64_t mmeUeS1Id = message.mmeUeS1Id;
-      uint16_t enbUeS1Id = message.enbUeS1Id;
-      uint16_t cgi = message.cgi;
-      std::list<EpcS1apSapEnb::ErabSwitchedInUplinkItem> erabToBeSwitchedInUplinkList;
-      EpcS1apSapEnb::ErabSwitchedInUplinkItem item;
-      for (uint8_t *i = data + sizeof message; i < data + packet->GetSize (); i = i + sizeof item)
+      if (typeOfMessage == EpcS1apHeader::InitiatingMessage)
         {
-          std::memcpy (&item, i, sizeof item);
-          erabToBeSwitchedInUplinkList.push_back (item);
+          NS_LOG_LOGIC ("InitialContextSetup");
+          InitialContextSetupRequestHeader initialContextSetupRequestHeader;
+          packet->RemoveHeader (initialContextSetupRequestHeader);
+          
+          uint64_t mmeUeS1Id = initialContextSetupRequestHeader.GetMmeUeS1Id ();
+          uint16_t enbUeS1Id = initialContextSetupRequestHeader.GetEnbUeS1Id ();
+          std::list<EpcS1apSapEnb::ErabToBeSetupItem> erabToBeSetupList;
+          erabToBeSetupList = initialContextSetupRequestHeader.GetErabToBeSetupList ();
+          DoInitialContextSetupRequest (mmeUeS1Id, enbUeS1Id, erabToBeSetupList);
         }
-      DoPathSwitchRequestAcknowledge (enbUeS1Id, mmeUeS1Id, cgi, erabToBeSwitchedInUplinkList);
     }
-  delete [] data;
+  else if (procedureCode == EpcS1apHeader::PathSwitchRequest)
+    {
+      if (typeOfMessage == EpcS1apHeader::SuccessfulOutcome)
+        {
+          NS_LOG_LOGIC ("PathSwitchRequest");
+          PathSwitchRequestAcknowledgeHeader pathSwitchRequestAcknowledgeHeader;
+          packet->RemoveHeader (pathSwitchRequestAcknowledgeHeader);
+          
+          uint64_t mmeUeS1Id = pathSwitchRequestAcknowledgeHeader.GetMmeUeS1Id ();
+          uint16_t enbUeS1Id = pathSwitchRequestAcknowledgeHeader.GetEnbUeS1Id ();
+          uint16_t cgi = pathSwitchRequestAcknowledgeHeader.GetCgi ();
+          std::list<EpcS1apSapEnb::ErabSwitchedInUplinkItem> erabToBeSwitchedInUplinkList;
+          erabToBeSwitchedInUplinkList = pathSwitchRequestAcknowledgeHeader.GetErabToBeSwitchedInUplinkList ();
+          
+          DoPathSwitchRequestAcknowledge (enbUeS1Id, mmeUeS1Id, cgi, erabToBeSwitchedInUplinkList);
+        }
+    }
+    
+  if (packet->GetSize () != 0)
+    {
+      HandleS1apPacket (socket, packet);
+    }
 }
 
 void 
@@ -393,24 +403,18 @@ TapEpcEnbApplication::DoReleaseIndication (uint64_t imsi, uint16_t rnti, uint8_t
   erabToBeReleaseIndication.push_back (erab);
   //From 3GPP TS 23401-950 Section 5.4.4.2, enB sends EPS bearer Identity in Bearer Release Indication message to MME
 
-  EpcS1apSapMme::ErabReleaseIndicationMessage message;
-  message.procedureCode = EpcS1apSap::ErabRelease;
-  message.typeOfMessage = EpcS1apSap::InitiatingMessage;
-  message.mmeUeS1Id = imsi;
-  message.enbUeS1Id = rnti;
+  EpcS1apHeader epcS1apHeader;
+  epcS1apHeader.SetProcedureCode (EpcS1apHeader::ErabRelease);
+  epcS1apHeader.SetTypeOfMessage (EpcS1apHeader::InitiatingMessage);
   
-  size_t sizeofList = erabToBeReleaseIndication.size () * sizeof(EpcS1apSapMme::ErabToBeReleasedIndication);
-  uint8_t *data = new uint8_t [sizeof message + sizeofList];
-  std::memcpy (data, &message, sizeof message);
-  EpcS1apSapMme::ErabToBeReleasedIndication indication;
-  for (std::size_t i = 0; i < erabToBeReleaseIndication.size (); ++i)
-    {
-      indication = erabToBeReleaseIndication.front ();
-      std::memcpy (data + sizeof message + (i * sizeof indication), &indication, sizeof indication);
-      erabToBeReleaseIndication.pop_front ();
-    }
-  Ptr<Packet> packet = Create<Packet> (data, sizeof message + sizeofList);
-  delete [] data;
+  ErabReleaseIndicationHeader erabReleaseIndicationHeader;
+  erabReleaseIndicationHeader.SetMmeUeS1Id (imsi);
+  erabReleaseIndicationHeader.SetEnbUeS1Id (rnti);
+  erabReleaseIndicationHeader.SetErabToBeReleaseIndication (erabToBeReleaseIndication);
+  
+  Ptr<Packet> packet = Create<Packet> ();
+  packet->AddHeader (erabReleaseIndicationHeader);
+  packet->AddHeader (epcS1apHeader);
   SendToS1apSocket (packet);
 }
 

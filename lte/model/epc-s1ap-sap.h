@@ -36,21 +36,8 @@ class EpcS1apSap
 public:
   virtual ~EpcS1apSap ();
 
-  enum ProcedureCode_t
-  {
-    InitialUeMessage,
-    ErabRelease,
-    InitialContextSetup,
-    PathSwitchRequest
-  };
-  
-  enum TypeOfMessgae_t
-  {
-    InitiatingMessage,
-    SuccessfulOutcome,
-    UnsuccessfulOutcome
-  };
 };
+
 
 /**
  * \ingroup lte
@@ -70,18 +57,8 @@ public:
    * \param ecgi in practice, the cell Id
    * 
    */
-  virtual void InitialUeMessage (uint64_t mmeUeS1Id, uint16_t enbUeS1Id,
-                                 uint64_t stmsi, uint16_t ecgi) = 0;
+  virtual void InitialUeMessage (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, uint64_t stmsi, uint16_t ecgi) = 0;
 
-  struct InitialUeRequestMessage
-  {
-    uint8_t procedureCode;
-    uint8_t typeOfMessage;
-    uint64_t mmeUeS1Id;
-    uint16_t enbUeS1Id;
-    uint64_t stmsi;
-    uint16_t ecgi;
-  };
 
   /**
    *  E-RAB Release Indication Item IEs, 3GPP TS 36.413 version 9.8.0 section 9.1.3.7
@@ -100,16 +77,7 @@ public:
     * \param erabToBeReleaseIndication, List of bearers to be deactivated
     *
     */
-  virtual void ErabReleaseIndication (uint64_t mmeUeS1Id, uint16_t enbUeS1Id,
-                                      std::list<ErabToBeReleasedIndication> erabToBeReleaseIndication ) = 0;
-  
-  struct ErabReleaseIndicationMessage
-  {
-    uint8_t procedureCode;
-    uint8_t typeOfMessage;
-    uint64_t mmeUeS1Id;
-    uint16_t enbUeS1Id;
-  };
+  virtual void ErabReleaseIndication (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, std::list<ErabToBeReleasedIndication> erabToBeReleaseIndication ) = 0;
 
   /**
    *  E-RAB Setup Item IEs, see 3GPP TS 36.413 9.1.4.2 
@@ -134,13 +102,6 @@ public:
                                             uint16_t enbUeS1Id,
                                             std::list<ErabSetupItem> erabSetupList) = 0;
 
-  struct InitialContextSetupResponseMessage
-  {
-    uint8_t procedureCode;
-    uint8_t typeOfMessage;
-    uint64_t mmeUeS1Id;
-    uint16_t enbUeS1Id;
-  };
 
   /**
    * E-RABs Switched in Downlink Item IE, see 3GPP TS 36.413 9.1.5.8
@@ -157,18 +118,10 @@ public:
    * PATH SWITCH REQUEST message, see 3GPP TS 36.413 9.1.5.8
    * 
    */
-  virtual void PathSwitchRequest (uint64_t enbUeS1Id, uint64_t mmeUeS1Id, uint16_t gci,
-                                  std::list<ErabSwitchedInDownlinkItem> erabToBeSwitchedInDownlinkList) = 0;
-  
-  struct PathSwitchRequestMessage
-  {
-    uint8_t procedureCode;
-    uint8_t typeOfMessage;
-    uint64_t enbUeS1Id;
-    uint64_t mmeUeS1Id;
-    uint16_t gci;
-  };
+  virtual void PathSwitchRequest (uint64_t enbUeS1Id, uint64_t mmeUeS1Id, uint16_t cgi, std::list<ErabSwitchedInDownlinkItem> erabToBeSwitchedInDownlinkList) = 0;
 };
+
+
 
 /**
  * \ingroup lte
@@ -201,13 +154,6 @@ public:
                                            uint16_t enbUeS1Id,
                                            std::list<ErabToBeSetupItem> erabToBeSetupList) = 0;
 
-  struct InitialContextSetupRequestMessage
-  {
-    uint8_t procedureCode;
-    uint8_t typeOfMessage;
-    uint64_t mmeUeS1Id;
-    uint16_t enbUeS1Id;
-  };
 
   /**
    * E-RABs Switched in Uplink Item IE, see 3GPP TS 36.413 9.1.5.9
@@ -226,15 +172,13 @@ public:
    */
   virtual void PathSwitchRequestAcknowledge (uint64_t enbUeS1Id, uint64_t mmeUeS1Id, uint16_t cgi, std::list<ErabSwitchedInUplinkItem> erabToBeSwitchedInUplinkList) = 0;
 
-  struct PathSwitchRequestAcknowledgeMessage
-  {
-    uint8_t procedureCode;
-    uint8_t typeOfMessage;
-    uint64_t enbUeS1Id;
-    uint64_t mmeUeS1Id;
-    uint16_t cgi;
-  };
+
 };
+
+
+
+
+
 
 /**
  * Template for the implementation of the EpcS1apSapMme as a member
@@ -252,8 +196,7 @@ public:
   virtual void ErabReleaseIndication (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, std::list<ErabToBeReleasedIndication> erabToBeReleaseIndication );
 
   virtual void InitialContextSetupResponse (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, std::list<ErabSetupItem> erabSetupList);
-  virtual void PathSwitchRequest (uint64_t enbUeS1Id, uint64_t mmeUeS1Id,
-                                  uint16_t cgi, std::list<ErabSwitchedInDownlinkItem> erabToBeSwitchedInDownlinkList);
+  virtual void PathSwitchRequest (uint64_t enbUeS1Id, uint64_t mmeUeS1Id, uint16_t cgi, std::list<ErabSwitchedInDownlinkItem> erabToBeSwitchedInDownlinkList);
 
 private:
   MemberEpcS1apSapMme ();
@@ -295,6 +238,12 @@ void MemberEpcS1apSapMme<C>::PathSwitchRequest (uint64_t enbUeS1Id, uint64_t mme
   m_owner->DoPathSwitchRequest (enbUeS1Id, mmeUeS1Id, cgi, erabToBeSwitchedInDownlinkList);
 }
 
+
+
+
+
+
+
 /**
  * Template for the implementation of the EpcS1apSapEnb as a member
  * of an owner class of type C to which all methods are forwarded
@@ -307,10 +256,8 @@ public:
   MemberEpcS1apSapEnb (C* owner);
 
   // inherited from EpcS1apSapEnb
-  virtual void InitialContextSetupRequest (uint64_t mmeUeS1Id, uint16_t enbUeS1Id,
-                                           std::list<ErabToBeSetupItem> erabToBeSetupList);
-  virtual void PathSwitchRequestAcknowledge (uint64_t enbUeS1Id, uint64_t mmeUeS1Id,
-                                             uint16_t cgi, std::list<ErabSwitchedInUplinkItem> erabToBeSwitchedInUplinkList);
+  virtual void InitialContextSetupRequest (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, std::list<ErabToBeSetupItem> erabToBeSetupList);
+  virtual void PathSwitchRequestAcknowledge (uint64_t enbUeS1Id, uint64_t mmeUeS1Id, uint16_t cgi, std::list<ErabSwitchedInUplinkItem> erabToBeSwitchedInUplinkList);
 
 private:
   MemberEpcS1apSapEnb ();
@@ -339,6 +286,12 @@ void MemberEpcS1apSapEnb<C>::PathSwitchRequestAcknowledge (uint64_t enbUeS1Id, u
 {
   m_owner->DoPathSwitchRequestAcknowledge (enbUeS1Id, mmeUeS1Id, cgi, erabToBeSwitchedInUplinkList);
 }
+
+
+
+
+
+
 
 } //namespace ns3
 

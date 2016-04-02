@@ -167,13 +167,13 @@ private:
    */
   struct EnbInfo : public SimpleRefCount<EnbInfo>
   {
-    uint16_t gci;
+    uint16_t cgi;
     Ipv4Address s1uAddr;
     EpcS1apSapEnb* s1apSapEnb;
   };
 
   /**
-   * EnbInfo stored by EGCI
+   * EnbInfo stored by ECGI
    * 
    */
   std::map<uint16_t, Ptr<EnbInfo> > m_enbInfoMap;

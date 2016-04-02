@@ -1,6 +1,6 @@
 
-#ifndef TAP_EPC_HELPER_HEADER_H
-#define TAP_EPC_HELPER_HEADER_H
+#ifndef EPC_HELPER_HEADER_H
+#define EPC_HELPER_HEADER_H
 
 #include <ns3/header.h>
 #include <ns3/epc-tft.h>
@@ -8,11 +8,11 @@
 
 namespace ns3 {
 
-class TapEpcHelperHeader : public Header
+class EpcHelperHeader : public Header
 {
 public:
-  TapEpcHelperHeader ();
-  virtual ~TapEpcHelperHeader ();
+  EpcHelperHeader ();
+  virtual ~EpcHelperHeader ();
   
   static TypeId GetTypeId (void);
   virtual TypeId GetInstanceTypeId (void) const;
@@ -165,4 +165,4 @@ private:
 
 } // namespace ns3
 
-#endif // TAP_EPC_HELPER_HEADER_H
+#endif // EPC_HELPER_HEADER_H

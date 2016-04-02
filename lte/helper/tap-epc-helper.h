@@ -104,6 +104,7 @@ private:
   void RecvFromSlaveSocket (Ptr<Socket> socket);
   
   void HandleMasterPacket (Ptr<Socket> socket, Ptr<Packet> packet);
+  void HandleS1apPacket (Ptr<Socket> socket, Ptr<Packet> packet);
   
   void MasterInitialize ();
   void SlaveInitialize ();

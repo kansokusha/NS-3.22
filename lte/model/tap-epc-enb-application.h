@@ -33,6 +33,7 @@
 #include <ns3/application.h>
 #include <ns3/eps-bearer.h>
 #include <ns3/epc-enb-s1-sap.h>
+#include <ns3/epc-s1ap-header.h>
 #include <ns3/epc-s1ap-sap.h>
 #include <map>
 
@@ -138,6 +139,8 @@ private:
                                      std::list<EpcS1apSapEnb::ErabToBeSetupItem> erabToBeSetupList);
   void DoPathSwitchRequestAcknowledge (uint64_t enbUeS1Id, uint64_t mmeUeS1Id, uint16_t cgi,
                                        std::list<EpcS1apSapEnb::ErabSwitchedInUplinkItem> erabToBeSwitchedInUplinkList);
+                                      
+  void HandleS1apPacket (Ptr<Socket> socket, Ptr<Packet> packet);
 
   /** 
    * \brief This function accepts bearer id corresponding to a particular UE and schedules indication of bearer release towards MME
