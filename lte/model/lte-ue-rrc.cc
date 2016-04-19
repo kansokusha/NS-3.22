@@ -195,7 +195,8 @@ LteUeRrc::GetTypeId (void)
     .AddAttribute ("T300",
                    "Timer for the RRC Connection Establishment procedure "
                    "(i.e., the procedure is deemed as failed if it takes longer than this)",
-                   TimeValue (MilliSeconds (100)),
+                   // TimeValue (MilliSeconds (100)),
+                   TimeValue (MilliSeconds (10000)),
                    MakeTimeAccessor (&LteUeRrc::m_t300),
                    MakeTimeChecker ())
     .AddTraceSource ("MibReceived",
@@ -2474,7 +2475,8 @@ LteUeRrc::VarMeasReportListAdd (uint8_t measId, ConcernedCells_t enteringCells)
   NS_ASSERT (!measReportIt->second.cellsTriggeredList.empty ());
   measReportIt->second.numberOfReportsSent = 0;
   measReportIt->second.periodicReportTimer
-    = Simulator::Schedule (UE_MEASUREMENT_REPORT_DELAY,
+  //  = Simulator::Schedule (UE_MEASUREMENT_REPORT_DELAY,
+      = Simulator::Schedule (UE_MEASUREMENT_REPORT_DELAY,
                            &LteUeRrc::SendMeasurementReport,
                            this, measId);
 
@@ -2738,7 +2740,8 @@ LteUeRrc::SendMeasurementReport (uint8_t measId)
 
       // schedule the next measurement reporting
       measReportIt->second.periodicReportTimer 
-        = Simulator::Schedule (reportInterval,
+      //  = Simulator::Schedule (reportInterval,
+          = Simulator::Schedule (reportInterval * 100,
                                &LteUeRrc::SendMeasurementReport,
                                this, measId);
 

@@ -46,11 +46,13 @@ NS_LOG_COMPONENT_DEFINE ("LteSpectrumPhy");
 
 // duration of SRS portion of UL subframe  
 // = 1 symbol for SRS -1ns as margin to avoid overlapping simulator events
-static const Time UL_SRS_DURATION = NanoSeconds (71429 -1);  
+// static const Time UL_SRS_DURATION = NanoSeconds (71429 -1);
+static const Time UL_SRS_DURATION = NanoSeconds (7142900 -1);
 
 // duration of the control portion of a subframe
 // = 0.001 / 14 * 3 (ctrl fixed to 3 symbols) -1ns as margin to avoid overlapping simulator events
-static const Time DL_CTRL_DURATION = NanoSeconds (214286 -1);
+// static const Time DL_CTRL_DURATION = NanoSeconds (214286 -1);
+static const Time DL_CTRL_DURATION = NanoSeconds (21428600 -1);
 
 static const double EffectiveCodingRate[29] = {
   0.08,

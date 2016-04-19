@@ -54,16 +54,15 @@ NS_LOG_COMPONENT_DEFINE ("LteUePhy");
  * events. The duration of one symbol is TTI/14 (rounded). In other words,
  * duration of data portion of UL subframe = 1 ms * (13/14) - 1 ns.
  */
-static const Time UL_DATA_DURATION = NanoSeconds (1e6 - 71429 - 1); 
+// static const Time UL_DATA_DURATION = NanoSeconds (1e6 - 71429 - 1);
+static const Time UL_DATA_DURATION = NanoSeconds (1e8 - 7142900 - 1);
 
 /**
  * Delay from subframe start to transmission of SRS.
  * Equals to "TTI length - 1 symbol for SRS".
  */
-static const Time UL_SRS_DELAY_FROM_SUBFRAME_START = NanoSeconds (1e6 - 71429); 
-
-
-
+// static const Time UL_SRS_DELAY_FROM_SUBFRAME_START = NanoSeconds (1e6 - 71429); 
+static const Time UL_SRS_DELAY_FROM_SUBFRAME_START = NanoSeconds (1e8 - 7142900); 
 
 ////////////////////////////////////////
 // member SAP forwarders
@@ -140,8 +139,10 @@ LteUePhy::LteUePhy ()
 
 LteUePhy::LteUePhy (Ptr<LteSpectrumPhy> dlPhy, Ptr<LteSpectrumPhy> ulPhy)
   : LtePhy (dlPhy, ulPhy),
-    m_p10CqiPeriocity (MilliSeconds (1)),  // ideal behavior
-    m_a30CqiPeriocity (MilliSeconds (1)),  // ideal behavior
+    // m_p10CqiPeriocity (MilliSeconds (1)),  // ideal behavior
+    m_p10CqiPeriocity (MilliSeconds (100)),
+    // m_a30CqiPeriocity (MilliSeconds (1)),  // ideal behavior
+    m_a30CqiPeriocity (MilliSeconds (100)),
     m_uePhySapUser (0),
     m_ueCphySapUser (0),
     m_state (CELL_SEARCH),
@@ -150,6 +151,7 @@ LteUePhy::LteUePhy (Ptr<LteSpectrumPhy> dlPhy, Ptr<LteSpectrumPhy> ulPhy)
     m_rsInterferencePowerUpdated (false),
     m_dataInterferencePowerUpdated (false),
     m_pssReceived (false),
+    // m_ueMeasurementsFilterPeriod (MilliSeconds (200)),
     m_ueMeasurementsFilterPeriod (MilliSeconds (200)),
     m_ueMeasurementsFilterLast (MilliSeconds (0)),
     m_rsrpSinrSampleCounter (0)

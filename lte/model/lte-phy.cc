@@ -44,7 +44,8 @@ LtePhy::LtePhy ()
 LtePhy::LtePhy (Ptr<LteSpectrumPhy> dlPhy, Ptr<LteSpectrumPhy> ulPhy)
   : m_downlinkSpectrumPhy (dlPhy),
     m_uplinkSpectrumPhy (ulPhy),
-    m_tti (0.001),
+    // m_tti (0.001),
+    m_tti (0.100),
     m_ulBandwidth (0),
     m_dlBandwidth (0),
     m_rbgSize (0),
@@ -54,7 +55,6 @@ LtePhy::LtePhy (Ptr<LteSpectrumPhy> dlPhy, Ptr<LteSpectrumPhy> ulPhy)
   NS_LOG_FUNCTION (this);
 }
 
-
 TypeId
 LtePhy::GetTypeId (void)
 {
@@ -63,7 +63,6 @@ LtePhy::GetTypeId (void)
   ;
   return tid;
 }
-
 
 LtePhy::~LtePhy ()
 {

@@ -895,7 +895,8 @@ LteEnbMac::DoAllocateNcRaPreamble (uint16_t rnti)
           NcRaPreambleInfo preambleInfo;
           uint32_t expiryIntervalMs = (uint32_t) m_preambleTransMax * ((uint32_t) m_raResponseWindowSize + 5); 
           
-          preambleInfo.expiryTime = Simulator::Now () + MilliSeconds (expiryIntervalMs);
+          // preambleInfo.expiryTime = Simulator::Now () + MilliSeconds (expiryIntervalMs);
+          preambleInfo.expiryTime = Simulator::Now () + MilliSeconds (expiryIntervalMs * 100);
           preambleInfo.rnti = rnti;
           NS_LOG_INFO ("allocated preamble for NC based RA: preamble " << preambleId << ", RNTI " << preambleInfo.rnti << ", exiryTime " << preambleInfo.expiryTime);
           m_allocatedNcRaPreambleMap[preambleId] = preambleInfo; // create if not exist, update otherwise
