@@ -121,6 +121,8 @@ private:
   void DoModifyBearerResponse (EpcS11SapMme::ModifyBearerResponseMessage msg);
   void DoDeleteBearerRequest (EpcS11SapMme::DeleteBearerRequestMessage msg);
 
+  void SendToS1apSocket (Ptr<Socket> socket, Ptr<Packet> packet);
+
   /**
    * Hold info on an EPS bearer to be activated
    */

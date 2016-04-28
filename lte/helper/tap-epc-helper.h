@@ -98,6 +98,8 @@ private:
 
   void HandleS1apConnection (Ptr<Socket> socket, const Address &addr);
   void HandleMasterConnection (Ptr<Socket> socket, const Address &addr);
+
+  void SendToSlaveSocket (Ptr<Packet> packet);
   
   void RecvFromS1apSocket (Ptr<Socket> socket);
   void RecvFromMasterSocket (Ptr<Socket> socket);

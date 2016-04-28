@@ -387,6 +387,14 @@ TapEpcHelper::RecvFromSlaveSocket (Ptr<Socket> socket)
 }
 
 void
+TapEpcHelper::SendToSlaveSocket (Ptr<Packet> packet)
+{
+  static double time = 0.0;
+  Simulator::Schedule (Seconds (time), static_cast<int (Socket::*)(Ptr<Packet>)>(&Socket::Send), m_slaveSocket, packet);
+  time += 0.001;
+}
+
+void
 TapEpcHelper::RecvFromMasterSocket (Ptr<Socket> socket)
 {
   Ptr<Packet> packet = socket->Recv ();
@@ -662,8 +670,7 @@ TapEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevice, uint16_t ce
       Ptr<Packet> packet = Create<Packet> ();
       packet->AddHeader (addEnbRequestHeader);
       packet->AddHeader (epcHelperHeader);
-      m_slaveSocket->Send (packet);
-      // Simulator::Schedule (Seconds (5.0), static_cast<int (Socket::*)(Ptr<Packet>)>(&Socket::Send), m_slaveSocket, packet); 
+      SendToSlaveSocket (packet);
       NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
     }
 }
@@ -738,8 +745,7 @@ TapEpcHelper::AddUe (Ptr<NetDevice> ueDevice, uint64_t imsi)
       Ptr<Packet> packet = Create<Packet> ();
       packet->AddHeader (addUeRequestHeader);
       packet->AddHeader (epcHelperHeader);
-      m_slaveSocket->Send (packet);
-      // Simulator::Schedule (Seconds (10.0), static_cast<int (Socket::*)(Ptr<Packet>)>(&Socket::Send), m_slaveSocket, packet); 
+      SendToSlaveSocket (packet);
       NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
     }
 }
@@ -784,7 +790,7 @@ TapEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_t imsi, Ptr<Epc
       Ptr<Packet> packet = Create<Packet> ();
       packet->AddHeader (activateEpsBearerRequestHeader);
       packet->AddHeader (epcHelperHeader);
-      m_slaveSocket->Send (packet);
+      SendToSlaveSocket (packet);
       NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
       bearerId = 1;
     }

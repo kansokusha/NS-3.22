@@ -23,6 +23,7 @@
 #include <ns3/fatal-error.h>
 #include <ns3/log.h>
 #include <ns3/packet.h>
+#include <ns3/core-module.h>
 
 #include <ns3/epc-s1ap-sap.h>
 #include <ns3/epc-s1ap-header.h>
@@ -82,6 +83,14 @@ TapEpcMme::AddS1apSocket (Address addr, Ptr<Socket> socket)
   Ipv4Address enbS1apAddr = inetAddr.GetIpv4 ();
   NS_LOG_FUNCTION (this << addr << socket << enbS1apAddr);
   m_s1apSocketMap[enbS1apAddr.Get ()] = socket;
+}
+
+void
+TapEpcMme::SendToS1apSocket (Ptr<Socket> socket, Ptr<Packet> packet)
+{
+  static double time = 0.0;
+  Simulator::Schedule (Seconds (time), static_cast<int (Socket::*)(Ptr<Packet>)>(&Socket::Send), socket, packet);
+  time += 0.001;
 }
 
 void 
@@ -213,7 +222,7 @@ TapEpcMme::DoCreateSessionResponse (EpcS11SapMme::CreateSessionResponseMessage m
   Ptr<Packet> packet = Create<Packet> ();
   packet->AddHeader (initialContextSetupRequestHeader);
   packet->AddHeader (epcS1apHeader);
-  s1apSocket->Send (packet);
+  SendToS1apSocket (s1apSocket, packet);
 }
 
 void
@@ -247,7 +256,7 @@ TapEpcMme::DoModifyBearerResponse (EpcS11SapMme::ModifyBearerResponseMessage msg
   Ptr<Packet> packet = Create<Packet> ();
   packet->AddHeader (pathSwitchRequestAcknowledgeHeader);
   packet->AddHeader (epcS1apHeader);
-  s1apSocket->Send (packet);
+  SendToS1apSocket (s1apSocket, packet);
 }
 
 void
