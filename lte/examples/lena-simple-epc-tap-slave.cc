@@ -125,7 +125,7 @@ main (int argc, char *argv[])
   ueIpIface = epcHelper->AssignUeIpv4Address (NetDeviceContainer (ueLteDevs));
 
   // lteHelper->Attach (ueLteDevs);
-  Simulator::Schedule (Seconds (5.0), static_cast<void (LteHelper::*)(NetDeviceContainer)>(&LteHelper::Attach), lteHelper, ueLteDevs); 
+  Simulator::Schedule (Seconds ((nEnbs * nUesPerEnb + nEnbs) * 0.1), static_cast<void (LteHelper::*)(NetDeviceContainer)>(&LteHelper::Attach), lteHelper, ueLteDevs);
   // side effects: 1) use idle mode cell selection, 2) activate default EPS bearer
 
   // Add TapBridge on UE

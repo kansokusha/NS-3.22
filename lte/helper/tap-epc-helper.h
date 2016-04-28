@@ -199,6 +199,8 @@ private:
   
   Mode m_mode;
 
+  Time m_scheduleTime;
+
   // SystemCondition m_epcSlaveSocketCondition;
 };
 

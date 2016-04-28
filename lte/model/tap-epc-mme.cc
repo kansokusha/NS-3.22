@@ -88,9 +88,7 @@ TapEpcMme::AddS1apSocket (Address addr, Ptr<Socket> socket)
 void
 TapEpcMme::SendToS1apSocket (Ptr<Socket> socket, Ptr<Packet> packet)
 {
-  static double time = 0.0;
-  Simulator::Schedule (Seconds (time), static_cast<int (Socket::*)(Ptr<Packet>)>(&Socket::Send), socket, packet);
-  time += 0.001;
+  socket->Send (packet);
 }
 
 void 

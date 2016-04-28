@@ -65,6 +65,7 @@ TapEpcHelper::TapEpcHelper ()
     m_s1apTcpPort (36412),
     m_masterTcpPort (36413)
 {
+  m_scheduleTime = Seconds (0.0);
   NS_LOG_FUNCTION (this);
 }
 
@@ -381,7 +382,7 @@ TapEpcHelper::RecvFromSlaveSocket (Ptr<Socket> socket)
           ActivateEpsBearerResponseHeader activateEpsBearerResponseHeader;
           packet->RemoveHeader (activateEpsBearerResponseHeader);
           uint8_t bearerId = activateEpsBearerResponseHeader.GetBearerId ();
-          NS_LOG_LOGIC ("bearerId = " << bearerId);
+          NS_LOG_LOGIC ("bearerId = " << (int) bearerId);
         }
     }
 }
@@ -389,9 +390,15 @@ TapEpcHelper::RecvFromSlaveSocket (Ptr<Socket> socket)
 void
 TapEpcHelper::SendToSlaveSocket (Ptr<Packet> packet)
 {
-  static double time = 0.0;
-  Simulator::Schedule (Seconds (time), static_cast<int (Socket::*)(Ptr<Packet>)>(&Socket::Send), m_slaveSocket, packet);
-  time += 0.001;
+  if (Simulator::Now () == Seconds (0.0))
+    {
+      Simulator::Schedule (m_scheduleTime, static_cast<int (Socket::*)(Ptr<Packet>)>(&Socket::Send), m_slaveSocket, packet);
+      m_scheduleTime = m_scheduleTime + Seconds (0.1);
+    }
+  else
+    {
+      Simulator::ScheduleNow (static_cast<int (Socket::*)(Ptr<Packet>)>(&Socket::Send), m_slaveSocket, packet);
+    }
 }
 
 void
@@ -459,18 +466,17 @@ TapEpcHelper::HandleMasterPacket (Ptr<Socket> socket, Ptr<Packet> packet)
           uint8_t bearerId = m_mme->AddBearer (imsi, tft, bearer);
           NS_LOG_LOGIC ("bearerId = " << (int) bearerId);
           
-          /*
           epcHelperHeader.SetProcedureCode (EpcHelperHeader::ActivateEpsBearer);
           epcHelperHeader.SetTypeOfMessage (EpcHelperHeader::SuccessfulOutcome);
-          
+
           ActivateEpsBearerResponseHeader activateEpsBearerResponseHeader;
           activateEpsBearerResponseHeader.SetBearerId (bearerId);
-      
+
           Ptr<Packet> responsePacket = Create<Packet> ();
           responsePacket->AddHeader (activateEpsBearerResponseHeader);
           responsePacket->AddHeader (epcHelperHeader);
-          */
-          // socket->Send (packet);
+
+          socket->Send (responsePacket);
         }
     }
     
@@ -483,7 +489,6 @@ TapEpcHelper::HandleMasterPacket (Ptr<Socket> socket, Ptr<Packet> packet)
 void
 TapEpcHelper::RecvFromS1apSocket (Ptr<Socket> socket)
 {
-  NS_LOG_FUNCTION (this);
   Ptr<Packet> packet = socket->Recv ();
   NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
   HandleS1apPacket (socket, packet);
@@ -800,6 +805,7 @@ TapEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_t imsi, Ptr<Epc
   Ptr<LteUeNetDevice> ueLteDevice = ueDevice->GetObject<LteUeNetDevice> ();
   if (ueLteDevice)
     {
+      // Simulator::Schedule (m_scheduleTime, &EpcUeNas::ActivateEpsBearer, ueLteDevice->GetNas (), bearer, tft);
       Simulator::ScheduleNow (&EpcUeNas::ActivateEpsBearer, ueLteDevice->GetNas (), bearer, tft);
     }
   return bearerId;
