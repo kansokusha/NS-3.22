@@ -129,7 +129,6 @@ LteHelper::DoInitialize (void)
   m_phyRxStats = CreateObject<PhyRxStatsCalculator> ();
   m_macStats = CreateObject<MacStatsCalculator> ();
   Object::DoInitialize ();
-
 }
 
 LteHelper::~LteHelper (void)

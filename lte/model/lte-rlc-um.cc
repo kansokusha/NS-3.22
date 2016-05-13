@@ -26,6 +26,8 @@
 #include "ns3/lte-rlc-sdu-status-tag.h"
 #include "ns3/lte-rlc-tag.h"
 
+#include <ns3/lte-time-dilation-factor.h>
+
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("LteRlcUm");
@@ -387,8 +389,8 @@ LteRlcUm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
   if (! m_txBuffer.empty ())
     {
       m_rbsTimer.Cancel ();
-      // m_rbsTimer = Simulator::Schedule (MilliSeconds (10), &LteRlcUm::ExpireRbsTimer, this);
-      m_rbsTimer = Simulator::Schedule (MilliSeconds (1000), &LteRlcUm::ExpireRbsTimer, this);
+      uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+      m_rbsTimer = Simulator::Schedule (MilliSeconds (10 * tdf), &LteRlcUm::ExpireRbsTimer, this);
     }
 }
 
@@ -551,11 +553,9 @@ LteRlcUm::DoReceivePdu (Ptr<Packet> p)
         {
           NS_LOG_LOGIC ("VR(UH) > VR(UR)");
           NS_LOG_LOGIC ("Start reordering timer");
-          /*
-          m_reorderingTimer = Simulator::Schedule (Time ("0.1s"),
-                                                   &LteRlcUm::ExpireReorderingTimer ,this);
-          */
-          m_reorderingTimer = Simulator::Schedule (Time ("10s"),
+
+          uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+          m_reorderingTimer = Simulator::Schedule (Seconds (0.1  * tdf),
                                                    &LteRlcUm::ExpireReorderingTimer ,this);
           m_vrUx = m_vrUh;
           NS_LOG_LOGIC ("New VR(UX) = " << m_vrUx);
@@ -1172,11 +1172,8 @@ LteRlcUm::ExpireReorderingTimer (void)
   if ( m_vrUh > m_vrUr)
     {
       NS_LOG_LOGIC ("Start reordering timer");
-      /*
-      m_reorderingTimer = Simulator::Schedule (Time ("0.1s"),
-                                               &LteRlcUm::ExpireReorderingTimer, this);
-      */
-      m_reorderingTimer = Simulator::Schedule (Time ("10s"),
+      uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+      m_reorderingTimer = Simulator::Schedule (Seconds (0.1 * tdf),
                                                &LteRlcUm::ExpireReorderingTimer, this);
       m_vrUx = m_vrUh;
       NS_LOG_LOGIC ("New VR(UX) = " << m_vrUx);
@@ -1192,8 +1189,8 @@ LteRlcUm::ExpireRbsTimer (void)
   if (! m_txBuffer.empty ())
     {
       DoReportBufferStatus ();
-      // m_rbsTimer = Simulator::Schedule (MilliSeconds (10), &LteRlcUm::ExpireRbsTimer, this);
-      m_rbsTimer = Simulator::Schedule (MilliSeconds (1000), &LteRlcUm::ExpireRbsTimer, this);
+      uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+      m_rbsTimer = Simulator::Schedule (MilliSeconds (10 * tdf), &LteRlcUm::ExpireRbsTimer, this);
     }
 }
 

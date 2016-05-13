@@ -339,6 +339,8 @@ TapEpcHelper::SlaveInitialize ()
   NS_ASSERT (retval == 0);
   m_slaveSocket->SetRecvCallback (MakeCallback (&TapEpcHelper::RecvFromSlaveSocket, this));
   
+  m_slaveMme = CreateObject<TapEpcMme> ();
+
   EpcHelper::DoInitialize ();
 }
 
@@ -346,12 +348,6 @@ void
 TapEpcHelper::SetMode (enum Mode mode)
 {
   m_mode = mode;
-}
-
-void
-TapEpcHelper::HandleMasterConnection (Ptr<Socket> socket, const Address &addr)
-{
-  socket->SetRecvCallback (MakeCallback (&TapEpcHelper::RecvFromMasterSocket, this));
 }
 
 void
@@ -365,7 +361,6 @@ TapEpcHelper::HandleS1apConnection (Ptr<Socket> socket, const Address &addr)
 void
 TapEpcHelper::RecvFromSlaveSocket (Ptr<Socket> socket)
 {
-  NS_LOG_FUNCTION (this);
   Ptr<Packet> packet = socket->Recv ();
   
   EpcHelperHeader epcHelperHeader;
@@ -407,6 +402,12 @@ TapEpcHelper::RecvFromMasterSocket (Ptr<Socket> socket)
   Ptr<Packet> packet = socket->Recv ();
   NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
   HandleMasterPacket (socket, packet);
+}
+
+void
+TapEpcHelper::HandleMasterConnection (Ptr<Socket> socket, const Address &addr)
+{
+  socket->SetRecvCallback (MakeCallback (&TapEpcHelper::RecvFromMasterSocket, this));
 }
 
 void
@@ -752,6 +753,8 @@ TapEpcHelper::AddUe (Ptr<NetDevice> ueDevice, uint64_t imsi)
       packet->AddHeader (epcHelperHeader);
       SendToSlaveSocket (packet);
       NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
+
+      m_slaveMme->AddUe (imsi);
     }
 }
 
@@ -781,31 +784,31 @@ TapEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_t imsi, Ptr<Epc
   else if(m_mode == Slave)
     {
       EpcTft epcTft = *tft;
-    
+
       EpcHelperHeader epcHelperHeader;
       epcHelperHeader.SetProcedureCode (EpcHelperHeader::ActivateEpsBearer);
       epcHelperHeader.SetTypeOfMessage (EpcHelperHeader::InitiatingMessage);
-    
+
       ActivateEpsBearerRequestHeader activateEpsBearerRequestHeader;
       activateEpsBearerRequestHeader.SetImsi (imsi);
       activateEpsBearerRequestHeader.SetUeAddress (ueAddr);
       activateEpsBearerRequestHeader.SetEpcTft (epcTft);
       activateEpsBearerRequestHeader.SetEpsBearer (bearer);
-      
+
       Ptr<Packet> packet = Create<Packet> ();
       packet->AddHeader (activateEpsBearerRequestHeader);
       packet->AddHeader (epcHelperHeader);
       SendToSlaveSocket (packet);
       NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
-      bearerId = 1;
+
+      bearerId = m_slaveMme->AddBearer (imsi, tft, bearer);
     }
   NS_ASSERT (bearerId != 0);
   NS_LOG_LOGIC ("bearerId = " << (int) bearerId);
-  
+
   Ptr<LteUeNetDevice> ueLteDevice = ueDevice->GetObject<LteUeNetDevice> ();
   if (ueLteDevice)
     {
-      // Simulator::Schedule (m_scheduleTime, &EpcUeNas::ActivateEpsBearer, ueLteDevice->GetNas (), bearer, tft);
       Simulator::ScheduleNow (&EpcUeNas::ActivateEpsBearer, ueLteDevice->GetNas (), bearer, tft);
     }
   return bearerId;

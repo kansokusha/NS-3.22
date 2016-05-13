@@ -143,6 +143,8 @@ private:
    * MME network element
    */
   Ptr<TapEpcMme> m_mme;
+
+  Ptr<TapEpcMme> m_slaveMme;
   
   Ptr<Socket> m_slaveSocket;
 
@@ -200,8 +202,6 @@ private:
   Mode m_mode;
 
   Time m_scheduleTime;
-
-  // SystemCondition m_epcSlaveSocketCondition;
 };
 
 } // namespace ns3

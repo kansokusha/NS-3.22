@@ -28,12 +28,13 @@
 #include "lte-phy.h"
 #include "lte-net-device.h"
 
+#include <ns3/lte-time-dilation-factor.h>
+
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("LtePhy");
 
 NS_OBJECT_ENSURE_REGISTERED (LtePhy);
-
 
 LtePhy::LtePhy ()
 {
@@ -44,8 +45,7 @@ LtePhy::LtePhy ()
 LtePhy::LtePhy (Ptr<LteSpectrumPhy> dlPhy, Ptr<LteSpectrumPhy> ulPhy)
   : m_downlinkSpectrumPhy (dlPhy),
     m_uplinkSpectrumPhy (ulPhy),
-    // m_tti (0.001),
-    m_tti (0.100),
+    m_tti (0.001),
     m_ulBandwidth (0),
     m_dlBandwidth (0),
     m_rbgSize (0),
@@ -53,6 +53,8 @@ LtePhy::LtePhy (Ptr<LteSpectrumPhy> dlPhy, Ptr<LteSpectrumPhy> ulPhy)
     m_cellId (0)
 {
   NS_LOG_FUNCTION (this);
+  uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+  m_tti = m_tti * tdf;
 }
 
 TypeId

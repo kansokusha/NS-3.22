@@ -39,6 +39,8 @@
 #include <ns3/double.h>
 #include <ns3/config.h>
 
+#include <ns3/lte-time-dilation-factor.h>
+
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("LteSpectrumPhy");
@@ -46,13 +48,11 @@ NS_LOG_COMPONENT_DEFINE ("LteSpectrumPhy");
 
 // duration of SRS portion of UL subframe  
 // = 1 symbol for SRS -1ns as margin to avoid overlapping simulator events
-// static const Time UL_SRS_DURATION = NanoSeconds (71429 -1);
-static const Time UL_SRS_DURATION = NanoSeconds (7142900 -1);
+static const Time UL_SRS_DURATION = NanoSeconds (71429 -1);
 
 // duration of the control portion of a subframe
 // = 0.001 / 14 * 3 (ctrl fixed to 3 symbols) -1ns as margin to avoid overlapping simulator events
-// static const Time DL_CTRL_DURATION = NanoSeconds (214286 -1);
-static const Time DL_CTRL_DURATION = NanoSeconds (21428600 -1);
+static const Time DL_CTRL_DURATION = NanoSeconds (214286 -1);
 
 static const double EffectiveCodingRate[29] = {
   0.08,
@@ -516,8 +516,10 @@ LteSpectrumPhy::StartTxDlCtrlFrame (std::list<Ptr<LteControlMessage> > ctrlMsgLi
       ChangeState (TX);
       NS_ASSERT (m_channel);
 
+      uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+
       Ptr<LteSpectrumSignalParametersDlCtrlFrame> txParams = Create<LteSpectrumSignalParametersDlCtrlFrame> ();
-      txParams->duration = DL_CTRL_DURATION;
+      txParams->duration = DL_CTRL_DURATION * tdf;
       txParams->txPhy = GetObject<SpectrumPhy> ();
       txParams->txAntenna = m_antenna;
       txParams->psd = m_txPsd;
@@ -525,7 +527,7 @@ LteSpectrumPhy::StartTxDlCtrlFrame (std::list<Ptr<LteControlMessage> > ctrlMsgLi
       txParams->pss = pss;
       txParams->ctrlMsgList = ctrlMsgList;
       m_channel->StartTx (txParams);
-      m_endTxEvent = Simulator::Schedule (DL_CTRL_DURATION, &LteSpectrumPhy::EndTx, this);
+      m_endTxEvent = Simulator::Schedule (DL_CTRL_DURATION * tdf, &LteSpectrumPhy::EndTx, this);
     }
     return false;
     break;
@@ -566,6 +568,8 @@ LteSpectrumPhy::StartTxUlSrsFrame ()
       */
       NS_ASSERT (m_txPsd);
       NS_LOG_LOGIC (this << " m_txPsd: " << *m_txPsd);
+
+      uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
       
       // we need to convey some PHY meta information to the receiver
       // to be used for simulation purposes (e.g., the CellId). This
@@ -574,13 +578,13 @@ LteSpectrumPhy::StartTxUlSrsFrame ()
       ChangeState (TX);
       NS_ASSERT (m_channel);
       Ptr<LteSpectrumSignalParametersUlSrsFrame> txParams = Create<LteSpectrumSignalParametersUlSrsFrame> ();
-      txParams->duration = UL_SRS_DURATION;
+      txParams->duration = UL_SRS_DURATION * tdf;
       txParams->txPhy = GetObject<SpectrumPhy> ();
       txParams->txAntenna = m_antenna;
       txParams->psd = m_txPsd;
       txParams->cellId = m_cellId;
       m_channel->StartTx (txParams);
-      m_endTxEvent = Simulator::Schedule (UL_SRS_DURATION, &LteSpectrumPhy::EndTx, this);
+      m_endTxEvent = Simulator::Schedule (UL_SRS_DURATION * tdf, &LteSpectrumPhy::EndTx, this);
     }
     return false;
     break;

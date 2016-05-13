@@ -27,7 +27,6 @@
 #include <ns3/attribute-accessor-helper.h>
 #include <ns3/double.h>
 
-
 #include "lte-enb-phy.h"
 #include "lte-ue-phy.h"
 #include "lte-net-device.h"
@@ -45,6 +44,8 @@
 #include <ns3/lte-ue-net-device.h>
 #include <ns3/pointer.h>
 
+#include <ns3/lte-time-dilation-factor.h>
+
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("LteEnbPhy");
@@ -57,16 +58,14 @@ NS_OBJECT_ENSURE_REGISTERED (LteEnbPhy);
  * Data portion is fixed to 11 symbols out of the available 14 symbols.
  * 1 nanosecond margin is added to avoid overlapping simulator events.
  */
-// static const Time DL_DATA_DURATION = NanoSeconds (785714 -1);
-static const Time DL_DATA_DURATION = NanoSeconds (78571400 -1);
+static const Time DL_DATA_DURATION = NanoSeconds (785714 - 1);
 
 /**
  * Delay from the start of a DL subframe to transmission of the data portion.
  * Equals to "TTI length * (3/14)".
  * Control portion is fixed to 3 symbols out of the available 14 symbols.
  */
-// static const Time DL_CTRL_DELAY_FROM_SUBFRAME_START = NanoSeconds (214286);
-static const Time DL_CTRL_DELAY_FROM_SUBFRAME_START = NanoSeconds (21428600);
+static const Time DL_CTRL_DELAY_FROM_SUBFRAME_START = NanoSeconds (214286);
 
 ////////////////////////////////////////
 // member SAP forwarders
@@ -733,9 +732,10 @@ LteEnbPhy::StartSubFrame (void)
   Ptr<PacketBurst> pb = GetPacketBurst ();
   if (pb)
     {
-      Simulator::Schedule (DL_CTRL_DELAY_FROM_SUBFRAME_START, // ctrl frame fixed to 3 symbols
+      uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+      Simulator::Schedule (DL_CTRL_DELAY_FROM_SUBFRAME_START * tdf, // ctrl frame fixed to 3 symbols
                            &LteEnbPhy::SendDataChannels,
-                           this,pb);
+                           this, pb);
     }
 
   // trigger the MAC
@@ -777,7 +777,8 @@ LteEnbPhy::SendDataChannels (Ptr<PacketBurst> pb)
   NS_LOG_LOGIC (this << " eNB start TX DATA");
   std::list<Ptr<LteControlMessage> > ctrlMsgList;
   ctrlMsgList.clear ();
-  m_downlinkSpectrumPhy->StartTxDataFrame (pb, ctrlMsgList, DL_DATA_DURATION);
+  uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+  m_downlinkSpectrumPhy->StartTxDataFrame (pb, ctrlMsgList, DL_DATA_DURATION * tdf);
 }
 
 

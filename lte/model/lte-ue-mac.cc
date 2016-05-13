@@ -35,7 +35,7 @@
 #include <ns3/simulator.h>
 #include <ns3/lte-common.h>
 
-
+#include <ns3/lte-time-dilation-factor.h>
 
 namespace ns3 {
 
@@ -388,10 +388,9 @@ LteUeMac::SendRaPreamble (bool contention)
   m_uePhySapProvider->SendRachPreamble (m_raPreambleId, m_raRnti);
   NS_LOG_INFO (this << " sent preamble id " << (uint32_t) m_raPreambleId << ", RA-RNTI " << (uint32_t) m_raRnti);
   // 3GPP 36.321 5.1.4 
-  // Time raWindowBegin = MilliSeconds (3);
-  Time raWindowBegin = MilliSeconds (300);
-  // Time raWindowEnd = MilliSeconds (3 + m_rachConfig.raResponseWindowSize);
-  Time raWindowEnd = MilliSeconds (300 + m_rachConfig.raResponseWindowSize * 100);
+  uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+  Time raWindowBegin = MilliSeconds (3 * tdf);
+  Time raWindowEnd = MilliSeconds ((3 * tdf) + (m_rachConfig.raResponseWindowSize * tdf));
   Simulator::Schedule (raWindowBegin, &LteUeMac::StartWaitingForRaResponse, this);
   m_noRaResponseReceivedEvent = Simulator::Schedule (raWindowEnd, &LteUeMac::RaResponseTimeout, this, contention);
 }

@@ -120,8 +120,9 @@ public:
    * \param h a pointer to the EpcHelper to be used
    */
   void SetEpcHelper (Ptr<EpcHelper> h);
-  
+
   void SetImsiCounter (uint64_t base);
+
   void SetCellIdCounter (uint16_t base);
 
   /** 

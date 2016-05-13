@@ -34,6 +34,8 @@
 #include <ns3/lte-pdcp.h>
 #include <ns3/lte-radio-bearer-info.h>
 
+#include <ns3/lte-time-dilation-factor.h>
+
 #include <cmath>
 
 namespace ns3 {
@@ -195,8 +197,7 @@ LteUeRrc::GetTypeId (void)
     .AddAttribute ("T300",
                    "Timer for the RRC Connection Establishment procedure "
                    "(i.e., the procedure is deemed as failed if it takes longer than this)",
-                   // TimeValue (MilliSeconds (100)),
-                   TimeValue (MilliSeconds (10000)),
+                   TimeValue (MilliSeconds (100)),
                    MakeTimeAccessor (&LteUeRrc::m_t300),
                    MakeTimeChecker ())
     .AddTraceSource ("MibReceived",
@@ -2475,7 +2476,6 @@ LteUeRrc::VarMeasReportListAdd (uint8_t measId, ConcernedCells_t enteringCells)
   NS_ASSERT (!measReportIt->second.cellsTriggeredList.empty ());
   measReportIt->second.numberOfReportsSent = 0;
   measReportIt->second.periodicReportTimer
-  //  = Simulator::Schedule (UE_MEASUREMENT_REPORT_DELAY,
       = Simulator::Schedule (UE_MEASUREMENT_REPORT_DELAY,
                            &LteUeRrc::SendMeasurementReport,
                            this, measId);
@@ -2738,10 +2738,10 @@ LteUeRrc::SendMeasurementReport (uint8_t measId)
           break;
         }
 
+      uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
       // schedule the next measurement reporting
       measReportIt->second.periodicReportTimer 
-      //  = Simulator::Schedule (reportInterval,
-          = Simulator::Schedule (reportInterval * 100,
+          = Simulator::Schedule (reportInterval * tdf,
                                &LteUeRrc::SendMeasurementReport,
                                this, measId);
 

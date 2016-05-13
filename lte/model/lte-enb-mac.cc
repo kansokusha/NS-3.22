@@ -34,9 +34,10 @@
 #include <ns3/lte-radio-bearer-tag.h>
 #include <ns3/lte-ue-phy.h>
 
-#include "ns3/lte-mac-sap.h"
+#include <ns3/lte-mac-sap.h>
 #include <ns3/lte-common.h>
 
+#include <ns3/lte-time-dilation-factor.h>
 
 namespace ns3 {
 
@@ -893,10 +894,10 @@ LteEnbMac::DoAllocateNcRaPreamble (uint16_t rnti)
         {
           found = true;
           NcRaPreambleInfo preambleInfo;
-          uint32_t expiryIntervalMs = (uint32_t) m_preambleTransMax * ((uint32_t) m_raResponseWindowSize + 5); 
-          
-          // preambleInfo.expiryTime = Simulator::Now () + MilliSeconds (expiryIntervalMs);
-          preambleInfo.expiryTime = Simulator::Now () + MilliSeconds (expiryIntervalMs * 100);
+          uint32_t expiryIntervalMs = (uint32_t) m_preambleTransMax * ((uint32_t) m_raResponseWindowSize + 5);
+
+          uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+          preambleInfo.expiryTime = Simulator::Now () + MilliSeconds (expiryIntervalMs * tdf);
           preambleInfo.rnti = rnti;
           NS_LOG_INFO ("allocated preamble for NC based RA: preamble " << preambleId << ", RNTI " << preambleInfo.rnti << ", exiryTime " << preambleInfo.expiryTime);
           m_allocatedNcRaPreambleMap[preambleId] = preambleInfo; // create if not exist, update otherwise

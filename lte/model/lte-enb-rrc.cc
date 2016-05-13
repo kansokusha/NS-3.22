@@ -41,8 +41,7 @@
 #include <ns3/lte-rlc-am.h>
 #include <ns3/lte-pdcp.h>
 
-
-
+#include <ns3/lte-time-dilation-factor.h>
 
 namespace ns3 {
 
@@ -1364,17 +1363,15 @@ LteEnbRrc::GetTypeId (void)
                                     PER_BASED,     "PacketErrorRateBased"))
     .AddAttribute ("SystemInformationPeriodicity",
                    "The interval for sending system information (Time value)",
-                   // TimeValue (MilliSeconds (80)),
-                   TimeValue (MilliSeconds (8000)),
+                   TimeValue (MilliSeconds (80)),
                    MakeTimeAccessor (&LteEnbRrc::m_systemInformationPeriodicity),
                    MakeTimeChecker ())
 
     // SRS related attributes
     .AddAttribute ("SrsPeriodicity",
                    "The SRS periodicity in milliseconds",
-                   // UintegerValue (40),
-                   UintegerValue (320),
-                   MakeUintegerAccessor (&LteEnbRrc::SetSrsPeriodicity, 
+                   UintegerValue (40),
+                   MakeUintegerAccessor (&LteEnbRrc::SetSrsPeriodicity,
                                          &LteEnbRrc::GetSrsPeriodicity),
                    MakeUintegerChecker<uint32_t> ())
 
@@ -1384,8 +1381,7 @@ LteEnbRrc::GetTypeId (void)
                    "received before this time, the UE context is destroyed. "
                    "Must account for reception of RAR and transmission of "
                    "RRC CONNECTION REQUEST over UL GRANT.",
-                   // TimeValue (MilliSeconds (15)),
-                   TimeValue (MilliSeconds (1500)),
+                   TimeValue (MilliSeconds (15)),
                    MakeTimeAccessor (&LteEnbRrc::m_connectionRequestTimeoutDuration),
                    MakeTimeChecker ())
     .AddAttribute ("ConnectionSetupTimeoutDuration",
@@ -1394,15 +1390,13 @@ LteEnbRrc::GetTypeId (void)
                    "context is destroyed. Must account for the UE's reception "
                    "of RRC CONNECTION SETUP and transmission of RRC CONNECTION "
                    "SETUP COMPLETE.",
-                   // TimeValue (MilliSeconds (150)),
-                   TimeValue (MilliSeconds (15000)),
+                   TimeValue (MilliSeconds (150)),
                    MakeTimeAccessor (&LteEnbRrc::m_connectionSetupTimeoutDuration),
                    MakeTimeChecker ())
     .AddAttribute ("ConnectionRejectedTimeoutDuration",
                    "Time to wait between sending a RRC CONNECTION REJECT and "
                    "destroying the UE context",
-                   // TimeValue (MilliSeconds (30)),
-                   TimeValue (MilliSeconds (3000)),
+                   TimeValue (MilliSeconds (30)),
                    MakeTimeAccessor (&LteEnbRrc::m_connectionRejectedTimeoutDuration),
                    MakeTimeChecker ())
     .AddAttribute ("HandoverJoiningTimeoutDuration",
@@ -1412,16 +1406,14 @@ LteEnbRrc::GetTypeId (void)
                    "X2 HO REQ ACK by source eNB, transmission of the Handover "
                    "Command, non-contention-based random access and reception "
                    "of the RRC CONNECTION RECONFIGURATION COMPLETE message.",
-                   // TimeValue (MilliSeconds (200)),
-                   TimeValue (MilliSeconds (20000)),
+                   TimeValue (MilliSeconds (200)),
                    MakeTimeAccessor (&LteEnbRrc::m_handoverJoiningTimeoutDuration),
                    MakeTimeChecker ())
     .AddAttribute ("HandoverLeavingTimeoutDuration",
                    "After issuing a Handover Command, if neither RRC "
                    "CONNECTION RE-ESTABLISHMENT nor X2 UE Context Release has "
                    "been previously received, the UE context is destroyed.",
-                   // TimeValue (MilliSeconds (500)),
-                   TimeValue (MilliSeconds (50000)),
+                   TimeValue (MilliSeconds (500)),
                    MakeTimeAccessor (&LteEnbRrc::m_handoverLeavingTimeoutDuration),
                    MakeTimeChecker ())
 
@@ -1784,8 +1776,8 @@ LteEnbRrc::ConfigureCell (uint8_t ulBandwidth, uint8_t dlBandwidth,
    * regularly transmitted every 80 ms by default (set the
    * SystemInformationPeriodicity attribute to configure this).
    */
-  // Simulator::Schedule (MilliSeconds (16), &LteEnbRrc::SendSystemInformation, this);
-  Simulator::Schedule (MilliSeconds (1600), &LteEnbRrc::SendSystemInformation, this);
+  uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+  Simulator::Schedule (MilliSeconds (16 * tdf), &LteEnbRrc::SendSystemInformation, this);
 
   m_configured = true;
 

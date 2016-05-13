@@ -41,6 +41,8 @@
 #include <ns3/boolean.h>
 #include <ns3/lte-ue-power-control.h>
 
+#include <ns3/lte-time-dilation-factor.h>
+
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("LteUePhy");
@@ -54,15 +56,13 @@ NS_LOG_COMPONENT_DEFINE ("LteUePhy");
  * events. The duration of one symbol is TTI/14 (rounded). In other words,
  * duration of data portion of UL subframe = 1 ms * (13/14) - 1 ns.
  */
-// static const Time UL_DATA_DURATION = NanoSeconds (1e6 - 71429 - 1);
-static const Time UL_DATA_DURATION = NanoSeconds (1e8 - 7142900 - 1);
+static const Time UL_DATA_DURATION = NanoSeconds (1e6 - 71429 - 1);
 
 /**
  * Delay from subframe start to transmission of SRS.
  * Equals to "TTI length - 1 symbol for SRS".
  */
-// static const Time UL_SRS_DELAY_FROM_SUBFRAME_START = NanoSeconds (1e6 - 71429); 
-static const Time UL_SRS_DELAY_FROM_SUBFRAME_START = NanoSeconds (1e8 - 7142900); 
+static const Time UL_SRS_DELAY_FROM_SUBFRAME_START = NanoSeconds (1e6 - 71429)
 
 ////////////////////////////////////////
 // member SAP forwarders
@@ -139,10 +139,8 @@ LteUePhy::LteUePhy ()
 
 LteUePhy::LteUePhy (Ptr<LteSpectrumPhy> dlPhy, Ptr<LteSpectrumPhy> ulPhy)
   : LtePhy (dlPhy, ulPhy),
-    // m_p10CqiPeriocity (MilliSeconds (1)),  // ideal behavior
-    m_p10CqiPeriocity (MilliSeconds (100)),
-    // m_a30CqiPeriocity (MilliSeconds (1)),  // ideal behavior
-    m_a30CqiPeriocity (MilliSeconds (100)),
+    m_p10CqiPeriocity (MilliSeconds (1)),  // ideal behavior
+    m_a30CqiPeriocity (MilliSeconds (1)),  // ideal behavior
     m_uePhySapUser (0),
     m_ueCphySapUser (0),
     m_state (CELL_SEARCH),
@@ -151,11 +149,14 @@ LteUePhy::LteUePhy (Ptr<LteSpectrumPhy> dlPhy, Ptr<LteSpectrumPhy> ulPhy)
     m_rsInterferencePowerUpdated (false),
     m_dataInterferencePowerUpdated (false),
     m_pssReceived (false),
-    // m_ueMeasurementsFilterPeriod (MilliSeconds (200)),
     m_ueMeasurementsFilterPeriod (MilliSeconds (200)),
     m_ueMeasurementsFilterLast (MilliSeconds (0)),
     m_rsrpSinrSampleCounter (0)
 {
+  uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+  m_p10CqiPeriocity = m_p10CqiPeriocity * tdf;
+  m_a30CqiPeriocity = m_a30CqiPeriocity * tdf;
+
   m_amc = CreateObject <LteAmc> ();
   m_powerControl = CreateObject <LteUePowerControl> ();
   m_uePhySapProvider = new UeMemberLteUePhySapProvider (this);
@@ -1079,7 +1080,8 @@ LteUePhy::SubframeIndication (uint32_t frameNo, uint32_t subframeNo)
           if ((((frameNo-1)*10 + (subframeNo-1)) % m_srsPeriodicity) == m_srsSubframeOffset)
             {
               NS_LOG_INFO ("frame " << frameNo << " subframe " << subframeNo << " sending SRS (offset=" << m_srsSubframeOffset << ", period=" << m_srsPeriodicity << ")");
-              m_sendSrsEvent = Simulator::Schedule (UL_SRS_DELAY_FROM_SUBFRAME_START, 
+              uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+              m_sendSrsEvent = Simulator::Schedule (UL_SRS_DELAY_FROM_SUBFRAME_START * tdf,
                                                     &LteUePhy::SendSrs,
                                                     this);
             }
@@ -1097,7 +1099,8 @@ LteUePhy::SubframeIndication (uint32_t frameNo, uint32_t subframeNo)
               m_txPower = m_powerControl->GetPuschTxPower (rbMask);
               SetSubChannelsForTransmission (rbMask);
             }
-          m_uplinkSpectrumPhy->StartTxDataFrame (pb, ctrlMsg, UL_DATA_DURATION);
+          uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+          m_uplinkSpectrumPhy->StartTxDataFrame (pb, ctrlMsg, UL_DATA_DURATION * tdf);
         }
       else
         {
@@ -1113,7 +1116,8 @@ LteUePhy::SubframeIndication (uint32_t frameNo, uint32_t subframeNo)
                 }
 
               SetSubChannelsForTransmission (dlRb);
-              m_uplinkSpectrumPhy->StartTxDataFrame (pb, ctrlMsg, UL_DATA_DURATION);
+              uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+              m_uplinkSpectrumPhy->StartTxDataFrame (pb, ctrlMsg, UL_DATA_DURATION * tdf);
             }
           else
             {

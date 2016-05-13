@@ -76,7 +76,9 @@ main (int argc, char *argv[])
 
   // let's speed things up, we don't need these details for this scenario
   Config::SetDefault ("ns3::LteSpectrumPhy::CtrlErrorModelEnabled", BooleanValue (false));
-  Config::SetDefault ("ns3::LteSpectrumPhy::DataErrorModelEnabled", BooleanValue (false));  
+  Config::SetDefault ("ns3::LteSpectrumPhy::DataErrorModelEnabled", BooleanValue (false));
+
+  LteTimeDilationFactor::Get ()->SetTimeDilationFactor (100);
 
   ConfigStore inputConfig;
   inputConfig.ConfigureDefaults();

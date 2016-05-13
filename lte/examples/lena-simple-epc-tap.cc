@@ -32,6 +32,7 @@
 #include "ns3/config-store-module.h"
 #include "ns3/tap-fd-net-device-helper.h"
 #include "ns3/tap-bridge-module.h"
+#include "ns3/lte-time-dilation-factor.h"
 
 using namespace ns3;
 
@@ -76,13 +77,15 @@ main (int argc, char *argv[])
 
   // let's speed things up, we don't need these details for this scenario
   Config::SetDefault ("ns3::LteSpectrumPhy::CtrlErrorModelEnabled", BooleanValue (false));
-  Config::SetDefault ("ns3::LteSpectrumPhy::DataErrorModelEnabled", BooleanValue (false));  
+  Config::SetDefault ("ns3::LteSpectrumPhy::DataErrorModelEnabled", BooleanValue (false));
 
   ConfigStore inputConfig;
   inputConfig.ConfigureDefaults();
 
   // parse again so you can override default values from the command line
   cmd.Parse(argc, argv);
+
+  LteTimeDilationFactor::Get ()->SetTimeDilationFactor (100);
 
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
   lteHelper->SetImsiCounter (imsiBase);
