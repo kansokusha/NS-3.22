@@ -2738,7 +2738,7 @@ LteUeRrc::SendMeasurementReport (uint8_t measId)
           break;
         }
 
-      uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+      uint16_t tdf = LteTimeDilationFactor::GetTimeDilationFactor ();
       // schedule the next measurement reporting
       measReportIt->second.periodicReportTimer 
           = Simulator::Schedule (reportInterval * tdf,

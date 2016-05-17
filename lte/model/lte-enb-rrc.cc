@@ -1776,7 +1776,7 @@ LteEnbRrc::ConfigureCell (uint8_t ulBandwidth, uint8_t dlBandwidth,
    * regularly transmitted every 80 ms by default (set the
    * SystemInformationPeriodicity attribute to configure this).
    */
-  uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+  uint16_t tdf = LteTimeDilationFactor::GetTimeDilationFactor ();
   Simulator::Schedule (MilliSeconds (16 * tdf), &LteEnbRrc::SendSystemInformation, this);
 
   m_configured = true;

@@ -6,22 +6,12 @@
 
 namespace ns3 {
 
-class LteTimeDilationFactor
-{
-public:
-  static LteTimeDilationFactor * Get (void);
-
-  LteTimeDilationFactor (void);
-  ~LteTimeDilationFactor (void);
+namespace LteTimeDilationFactor {
 
   void SetTimeDilationFactor (uint16_t tdf);
   uint16_t GetTimeDilationFactor (void);
 
-private:
-  static LteTimeDilationFactor * m_instance;
-
-  uint16_t m_timeDilationFactor;
-};
+}
 
 }
 

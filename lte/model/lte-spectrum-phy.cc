@@ -516,7 +516,7 @@ LteSpectrumPhy::StartTxDlCtrlFrame (std::list<Ptr<LteControlMessage> > ctrlMsgLi
       ChangeState (TX);
       NS_ASSERT (m_channel);
 
-      uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+      uint16_t tdf = LteTimeDilationFactor::GetTimeDilationFactor ();
 
       Ptr<LteSpectrumSignalParametersDlCtrlFrame> txParams = Create<LteSpectrumSignalParametersDlCtrlFrame> ();
       txParams->duration = DL_CTRL_DURATION * tdf;
@@ -569,7 +569,7 @@ LteSpectrumPhy::StartTxUlSrsFrame ()
       NS_ASSERT (m_txPsd);
       NS_LOG_LOGIC (this << " m_txPsd: " << *m_txPsd);
 
-      uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+      uint16_t tdf = LteTimeDilationFactor::GetTimeDilationFactor ();
       
       // we need to convey some PHY meta information to the receiver
       // to be used for simulation purposes (e.g., the CellId). This

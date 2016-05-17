@@ -53,7 +53,7 @@ LtePhy::LtePhy (Ptr<LteSpectrumPhy> dlPhy, Ptr<LteSpectrumPhy> ulPhy)
     m_cellId (0)
 {
   NS_LOG_FUNCTION (this);
-  uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+  uint16_t tdf = LteTimeDilationFactor::GetTimeDilationFactor ();
   m_tti = m_tti * tdf;
 }
 

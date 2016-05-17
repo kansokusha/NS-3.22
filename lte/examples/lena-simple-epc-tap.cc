@@ -85,7 +85,7 @@ main (int argc, char *argv[])
   // parse again so you can override default values from the command line
   cmd.Parse(argc, argv);
 
-  LteTimeDilationFactor::Get ()->SetTimeDilationFactor (100);
+  LteTimeDilationFactor::SetTimeDilationFactor (100);
 
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
   lteHelper->SetImsiCounter (imsiBase);

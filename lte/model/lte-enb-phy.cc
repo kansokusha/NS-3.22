@@ -732,7 +732,7 @@ LteEnbPhy::StartSubFrame (void)
   Ptr<PacketBurst> pb = GetPacketBurst ();
   if (pb)
     {
-      uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+      uint16_t tdf = LteTimeDilationFactor::GetTimeDilationFactor ();
       Simulator::Schedule (DL_CTRL_DELAY_FROM_SUBFRAME_START * tdf, // ctrl frame fixed to 3 symbols
                            &LteEnbPhy::SendDataChannels,
                            this, pb);
@@ -777,7 +777,7 @@ LteEnbPhy::SendDataChannels (Ptr<PacketBurst> pb)
   NS_LOG_LOGIC (this << " eNB start TX DATA");
   std::list<Ptr<LteControlMessage> > ctrlMsgList;
   ctrlMsgList.clear ();
-  uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+  uint16_t tdf = LteTimeDilationFactor::GetTimeDilationFactor ();
   m_downlinkSpectrumPhy->StartTxDataFrame (pb, ctrlMsgList, DL_DATA_DURATION * tdf);
 }
 

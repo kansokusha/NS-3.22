@@ -1,34 +1,32 @@
 #include <ns3/lte-time-dilation-factor.h>
+#include <ns3/singleton.h>
 #include <ns3/core-module.h>
 #include <ns3/log.h>
 
 namespace ns3 {
 
-extern LteTimeDilationFactor * LteTimeDilationFactor::m_instance;
-
 NS_LOG_COMPONENT_DEFINE ("LteTimeDilationFactor");
 
-LteTimeDilationFactor *
-LteTimeDilationFactor::Get (void)
+class LteTimeDilationFactorImpl
 {
-  if (LteTimeDilationFactor::m_instance == 0)
-    {
-      LteTimeDilationFactor::m_instance = new LteTimeDilationFactor;
-    }
-  return LteTimeDilationFactor::m_instance;
-}
+public:
 
-LteTimeDilationFactor::LteTimeDilationFactor (void)
-{
-  m_timeDilationFactor = 1;
-}
+  LteTimeDilationFactorImpl (void);
+  void SetTimeDilationFactor (uint16_t tdf);
+  uint16_t GetTimeDilationFactor (void);
 
-LteTimeDilationFactor::~LteTimeDilationFactor (void)
+private:
+
+  uint16_t m_timeDilationFactor;
+};
+
+LteTimeDilationFactorImpl::LteTimeDilationFactorImpl (void)
 {
+  SetTimeDilationFactor (1);
 }
 
 void
-LteTimeDilationFactor::SetTimeDilationFactor (uint16_t tdf)
+LteTimeDilationFactorImpl::SetTimeDilationFactor (uint16_t tdf)
 {
   m_timeDilationFactor = tdf;
 
@@ -45,14 +43,29 @@ LteTimeDilationFactor::SetTimeDilationFactor (uint16_t tdf)
   Config::SetDefault ("ns3::LteEnbRrc::ConnectionRejectedTimeoutDuration", TimeValue (MilliSeconds (30 * tdf)));
   Config::SetDefault ("ns3::LteEnbRrc::HandoverJoiningTimeoutDuration", TimeValue (MilliSeconds (200 * tdf)));
   Config::SetDefault ("ns3::LteEnbRrc::HandoverLeavingTimeoutDuration", TimeValue (MilliSeconds (500 * tdf)));
-
   Config::SetDefault ("ns3::LteUeRrc::T300", TimeValue (MilliSeconds (100 * tdf)));
 }
 
 uint16_t
-LteTimeDilationFactor::GetTimeDilationFactor (void)
+LteTimeDilationFactorImpl::GetTimeDilationFactor (void)
 {
   return m_timeDilationFactor;
+}
+
+namespace LteTimeDilationFactor {
+
+void
+SetTimeDilationFactor (uint16_t tdf)
+{
+  Singleton<LteTimeDilationFactorImpl>::Get ()->SetTimeDilationFactor (tdf);
+}
+
+uint16_t
+GetTimeDilationFactor (void)
+{
+  return Singleton<LteTimeDilationFactorImpl>::Get ()->GetTimeDilationFactor ();
+}
+
 }
 
 }

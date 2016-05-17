@@ -389,7 +389,7 @@ LteRlcUm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
   if (! m_txBuffer.empty ())
     {
       m_rbsTimer.Cancel ();
-      uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+      uint16_t tdf = LteTimeDilationFactor::GetTimeDilationFactor ();
       m_rbsTimer = Simulator::Schedule (MilliSeconds (10 * tdf), &LteRlcUm::ExpireRbsTimer, this);
     }
 }
@@ -554,7 +554,7 @@ LteRlcUm::DoReceivePdu (Ptr<Packet> p)
           NS_LOG_LOGIC ("VR(UH) > VR(UR)");
           NS_LOG_LOGIC ("Start reordering timer");
 
-          uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+          uint16_t tdf = LteTimeDilationFactor::GetTimeDilationFactor ();
           m_reorderingTimer = Simulator::Schedule (Seconds (0.1  * tdf),
                                                    &LteRlcUm::ExpireReorderingTimer ,this);
           m_vrUx = m_vrUh;
@@ -1172,7 +1172,7 @@ LteRlcUm::ExpireReorderingTimer (void)
   if ( m_vrUh > m_vrUr)
     {
       NS_LOG_LOGIC ("Start reordering timer");
-      uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+      uint16_t tdf = LteTimeDilationFactor::GetTimeDilationFactor ();
       m_reorderingTimer = Simulator::Schedule (Seconds (0.1 * tdf),
                                                &LteRlcUm::ExpireReorderingTimer, this);
       m_vrUx = m_vrUh;
@@ -1189,7 +1189,7 @@ LteRlcUm::ExpireRbsTimer (void)
   if (! m_txBuffer.empty ())
     {
       DoReportBufferStatus ();
-      uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+      uint16_t tdf = LteTimeDilationFactor::GetTimeDilationFactor ();
       m_rbsTimer = Simulator::Schedule (MilliSeconds (10 * tdf), &LteRlcUm::ExpireRbsTimer, this);
     }
 }

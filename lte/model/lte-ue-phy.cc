@@ -62,7 +62,7 @@ static const Time UL_DATA_DURATION = NanoSeconds (1e6 - 71429 - 1);
  * Delay from subframe start to transmission of SRS.
  * Equals to "TTI length - 1 symbol for SRS".
  */
-static const Time UL_SRS_DELAY_FROM_SUBFRAME_START = NanoSeconds (1e6 - 71429)
+static const Time UL_SRS_DELAY_FROM_SUBFRAME_START = NanoSeconds (1e6 - 71429);
 
 ////////////////////////////////////////
 // member SAP forwarders
@@ -153,7 +153,7 @@ LteUePhy::LteUePhy (Ptr<LteSpectrumPhy> dlPhy, Ptr<LteSpectrumPhy> ulPhy)
     m_ueMeasurementsFilterLast (MilliSeconds (0)),
     m_rsrpSinrSampleCounter (0)
 {
-  uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+  uint16_t tdf = LteTimeDilationFactor::GetTimeDilationFactor ();
   m_p10CqiPeriocity = m_p10CqiPeriocity * tdf;
   m_a30CqiPeriocity = m_a30CqiPeriocity * tdf;
 
@@ -1080,7 +1080,7 @@ LteUePhy::SubframeIndication (uint32_t frameNo, uint32_t subframeNo)
           if ((((frameNo-1)*10 + (subframeNo-1)) % m_srsPeriodicity) == m_srsSubframeOffset)
             {
               NS_LOG_INFO ("frame " << frameNo << " subframe " << subframeNo << " sending SRS (offset=" << m_srsSubframeOffset << ", period=" << m_srsPeriodicity << ")");
-              uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+              uint16_t tdf = LteTimeDilationFactor::GetTimeDilationFactor ();
               m_sendSrsEvent = Simulator::Schedule (UL_SRS_DELAY_FROM_SUBFRAME_START * tdf,
                                                     &LteUePhy::SendSrs,
                                                     this);
@@ -1099,7 +1099,7 @@ LteUePhy::SubframeIndication (uint32_t frameNo, uint32_t subframeNo)
               m_txPower = m_powerControl->GetPuschTxPower (rbMask);
               SetSubChannelsForTransmission (rbMask);
             }
-          uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+          uint16_t tdf = LteTimeDilationFactor::GetTimeDilationFactor ();
           m_uplinkSpectrumPhy->StartTxDataFrame (pb, ctrlMsg, UL_DATA_DURATION * tdf);
         }
       else
@@ -1116,7 +1116,7 @@ LteUePhy::SubframeIndication (uint32_t frameNo, uint32_t subframeNo)
                 }
 
               SetSubChannelsForTransmission (dlRb);
-              uint16_t tdf = LteTimeDilationFactor::Get ()->GetTimeDilationFactor ();
+              uint16_t tdf = LteTimeDilationFactor::GetTimeDilationFactor ();
               m_uplinkSpectrumPhy->StartTxDataFrame (pb, ctrlMsg, UL_DATA_DURATION * tdf);
             }
           else
