@@ -52,6 +52,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 
 namespace ns3 {
@@ -151,6 +152,11 @@ TapEpcHelper::GetTypeId (void)
                    StringValue ("00:00:00:59:00:ad"),
                    MakeStringAccessor (&TapEpcHelper::m_masterMacAddress),
                    MakeStringChecker ())
+    .AddAttribute ("LogFile",
+                   "Set this attribute to redirect NS_LOG to std::ofstream",
+                   StringValue (""),
+                   MakeStringAccessor (&TapEpcHelper::m_logFile),
+                   MakeStringChecker ())
     ;
   return tid;
 }
@@ -158,8 +164,16 @@ TapEpcHelper::GetTypeId (void)
 void
 TapEpcHelper::DoInitialize ()
 {
-  NS_LOG_LOGIC (this);
   
+  if (m_logFile.compare ("") != 0)
+    {
+      const unsigned int length = 8192;
+      char buffer[length];
+      m_fileStream.open (m_logFile.c_str ());
+      m_fileStream.rdbuf()->pubsetbuf(buffer, length);
+      std::clog.rdbuf (m_fileStream.rdbuf ());
+    }
+
   if (m_mode == Master)
     {
       MasterInitialize ();
@@ -173,8 +187,6 @@ TapEpcHelper::DoInitialize ()
 void
 TapEpcHelper::MasterInitialize ()
 {
-  NS_LOG_LOGIC (this);
-  
   int retval;
 
   // we use a /8 net for all UEs
@@ -272,7 +284,7 @@ TapEpcHelper::MasterInitialize ()
   NS_ASSERT (retval == 0);
   masterSocket->Listen ();
   masterSocket->SetAcceptCallback (MakeNullCallback<bool, Ptr<Socket>, const Address &> (),
-                                      MakeCallback (&TapEpcHelper::HandleMasterConnection, this));
+                                   MakeCallback (&TapEpcHelper::HandleMasterConnection, this));
 
   // create EpcSgwPgwApplication
   m_sgwPgwApp = CreateObject<EpcSgwPgwApplication> (m_tunDevice, sgwPgwS1uSocket);
@@ -292,7 +304,6 @@ TapEpcHelper::MasterInitialize ()
 void
 TapEpcHelper::SlaveInitialize ()
 {
-  NS_LOG_FUNCTION (this);
   
   // we use a /8 net for all UEs
   m_ueAddressHelper.SetBase ("7.0.0.0", "255.0.0.0", m_masterUeIpAddressBase.c_str ());
@@ -570,6 +581,10 @@ TapEpcHelper::DoDispose ()
   m_tunDevice = 0;
   m_sgwPgwApp = 0;  
   m_sgwPgw->Dispose ();
+  if (m_logFile.compare ("") != 0)
+    {
+      m_fileStream.close ();
+    }
 }
 
 void

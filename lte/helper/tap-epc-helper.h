@@ -33,6 +33,8 @@
 #include <ns3/header.h>
 #include <ns3/system-condition.h>
 
+#include <fstream>
+
 namespace ns3 {
 
 class Node;
@@ -202,6 +204,9 @@ private:
   Mode m_mode;
 
   Time m_scheduleTime;
+
+  std::string m_logFile;
+  std::ofstream m_fileStream;
 };
 
 } // namespace ns3

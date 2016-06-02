@@ -32,6 +32,7 @@
 #include "ns3/config-store-module.h"
 #include "ns3/tap-fd-net-device-helper.h"
 #include "ns3/tap-bridge-module.h"
+#include "ns3/lte-time-dilation-factor.h"
 
 using namespace ns3;
 
