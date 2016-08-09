@@ -42,6 +42,7 @@
 #include <ns3/lte-pdcp.h>
 
 #include <ns3/lte-time-dilation-factor.h>
+#include <ctime>
 
 namespace ns3 {
 
@@ -799,6 +800,13 @@ void
 UeManager::RecvRrcConnectionRequest (LteRrcSap::RrcConnectionRequest msg)
 {
   NS_LOG_FUNCTION (this);
+
+  /**/
+  struct timespec ts;
+  clock_gettime (CLOCK_REALTIME, &ts);
+  NS_LOG_LOGIC ("clock_gettime () " << ts.tv_sec << " "<< ts.tv_nsec);
+  /**/
+
   switch (m_state)
     {
     case INITIAL_RANDOM_ACCESS:
@@ -893,6 +901,13 @@ UeManager::RecvRrcConnectionReconfigurationCompleted (LteRrcSap::RrcConnectionRe
         }
       SwitchToState (CONNECTED_NORMALLY);
       m_rrc->m_connectionReconfigurationTrace (m_imsi, m_rrc->m_cellId, m_rnti);
+
+      /**/
+      struct timespec ts;
+      clock_gettime (CLOCK_REALTIME, &ts);
+      NS_LOG_LOGIC ("clock_gettime () " << ts.tv_sec << " "<< ts.tv_nsec);
+      /**/
+
       break;
 
     // This case is added to NS-3 in order to handle bearer de-activation scenario for CONNECTED state UE

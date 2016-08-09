@@ -253,7 +253,7 @@ TapEpcHelper::MasterInitialize ()
   NS_LOG_LOGIC ("MAC address of Master: " << masterDevices.Get (0)->GetAddress ());
   
   // we use a /8 subnet so the SGW and the eNBs can talk directly to each other
-  m_epcIpv4AddressHelper.SetBase ("10.0.0.0", "255.0.0.0", m_masterIpAddressBase.c_str ());
+  m_epcIpv4AddressHelper.SetBase ("10.0.0.0", "255.255.0.0", m_masterIpAddressBase.c_str ());
   Ipv4InterfaceContainer sgwIpIfaces = m_epcIpv4AddressHelper.Assign (sgwDevices.Get (0));
   m_sgwIpv4Address = sgwIpIfaces.GetAddress (0);
   NS_LOG_LOGIC ("IP address of SGW: " << m_sgwIpv4Address);
@@ -310,7 +310,7 @@ TapEpcHelper::SlaveInitialize ()
   m_ueDefaultGatewayAddress = m_ueAddressHelper.NewAddress ();
   m_ueAddressHelper.SetBase ("7.0.0.0", "255.0.0.0", m_slaveUeIpAddressBase.c_str ());
   
-  m_epcIpv4AddressHelper.SetBase ("10.0.0.0", "255.0.0.0", m_masterIpAddressBase.c_str ());
+  m_epcIpv4AddressHelper.SetBase ("10.0.0.0", "255.255.0.0", m_masterIpAddressBase.c_str ());
   m_sgwIpv4Address = m_epcIpv4AddressHelper.NewAddress ();
   NS_LOG_LOGIC ("IP address of SGW: " << m_sgwIpv4Address);
   m_mmeIpv4Address = m_epcIpv4AddressHelper.NewAddress ();
@@ -339,7 +339,7 @@ TapEpcHelper::SlaveInitialize ()
   NetDeviceContainer slaveDevices = tap.Install (m_slave);
   slaveDevices.Get (0)->SetAddress (TapEpcHelper::AllocateMac48Address (static_cast<uint64_t> (key)));
   
-  m_epcIpv4AddressHelper.SetBase ("10.0.0.0", "255.0.0.0", m_slaveIpAddressBase.c_str ());
+  m_epcIpv4AddressHelper.SetBase ("10.0.0.0", "255.255.0.0", m_slaveIpAddressBase.c_str ());
   Ipv4InterfaceContainer slaveIpIfaces = m_epcIpv4AddressHelper.Assign (slaveDevices.Get (0));
   
   NS_LOG_LOGIC ("IP address of Slave: " << slaveIpIfaces.GetAddress (0));
@@ -569,7 +569,7 @@ TapEpcHelper::HandleS1apPacket (Ptr<Socket> socket, Ptr<Packet> packet)
   
   if (packet->GetSize () != 0)
     {
-      HandleMasterPacket (socket, packet);
+      HandleS1apPacket (socket, packet);
     }
 }
 
