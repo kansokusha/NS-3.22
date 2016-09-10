@@ -263,12 +263,6 @@ EpcEnbApplication::RecvFromLteSocket (Ptr<Socket> socket)
       std::map<uint8_t, uint32_t>::iterator bidIt = rntiIt->second.find (bid);
       NS_ASSERT (bidIt != rntiIt->second.end ());
       uint32_t teid = bidIt->second;
-
-      Ipv4Header ipv4Header;
-      packet->RemoveHeader (ipv4Header);
-      ipv4Header.SetDscp (Ipv4Header::DSCP_AF21);
-      packet->AddHeader (ipv4Header);
-
       SendToS1uSocket (packet, teid);
     }
 }

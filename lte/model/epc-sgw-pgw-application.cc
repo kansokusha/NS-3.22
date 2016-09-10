@@ -27,6 +27,7 @@
 #include "ns3/inet-socket-address.h"
 #include "ns3/epc-gtpu-header.h"
 #include "ns3/abort.h"
+#include "ns3/teid-dscp-mapping.h"
 
 namespace ns3 {
 
@@ -162,10 +163,6 @@ EpcSgwPgwApplication::RecvFromTunDevice (Ptr<Packet> packet, const Address& sour
         }
       else
         {
-          packet->RemoveHeader (ipv4Header);
-          ipv4Header.SetDscp (Ipv4Header::DSCP_AF21);
-          packet->AddHeader (ipv4Header);
-
           SendToS1uSocket (packet, enbAddr, teid);
         }
     }
@@ -291,6 +288,8 @@ EpcSgwPgwApplication::DoCreateSessionRequest (EpcS11SapSgw::CreateSessionRequest
       bearerContext.bearerLevelQos = bit->bearerLevelQos; 
       bearerContext.tft = bit->tft;
       res.bearerContextsCreated.push_back (bearerContext);
+
+      TeidDscpMapping::SetTeidDscpMapping (teid, bearerContext.bearerLevelQos.qci);
     }
   m_s11SapMme->CreateSessionResponse (res);
   

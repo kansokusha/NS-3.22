@@ -45,6 +45,7 @@
 #include "ns3/udp-l4-protocol.h"
 #include "ns3/udp-header.h"
 #include "ns3/epc-gtpu-header.h"
+#include "ns3/teid-dscp-mapping.h"
 
 namespace ns3 {
 
@@ -224,9 +225,8 @@ FdNetDevice::GetEncapsulationMode (void) const
 }
 
 void
-FdNetDevice::SetDscpMarking (enum DscpMarking dscpMarking)
+FdNetDevice::SetDscpMarking (FdNetDevice::DscpMarking dscpMarking)
 {
-  NS_LOG_FUNCTION (dscpMarking);
   m_dscpMarking = dscpMarking;
 }
 
@@ -542,10 +542,12 @@ FdNetDevice::SendFrom (Ptr<Packet> packet, const Address& src, const Address& de
         {
           pCopy->RemoveHeader (gtpu);
           uint32_t teid = gtpu.GetTeid ();
-          NS_LOG_DEBUG ("FdNetDevice::SendFrom, teid: " << teid);
+          Ipv4Header::DscpType dscp = TeidDscpMapping::GetTeidDscpMapping (teid);
+
+          NS_LOG_DEBUG ("FdNetDevice::SendFrom TEID: " << teid << " DSCP: " << dscp);
 
           packet->RemoveHeader (ipv4Header);
-          ipv4Header.SetDscp (Ipv4Header::DSCP_EF);
+          ipv4Header.SetDscp (dscp);
           ipv4Header.EnableChecksum ();
           packet->AddHeader (ipv4Header);
         }

@@ -1566,6 +1566,12 @@ def register_types(module):
     register_types_ns3_LteTimeDilationFactor(nested_module)
     
     
+    ## Register a nested module for the namespace TeidDscpMapping
+    
+    nested_module = module.add_cpp_namespace('TeidDscpMapping')
+    register_types_ns3_TeidDscpMapping(nested_module)
+    
+    
     ## Register a nested module for the namespace internal
     
     nested_module = module.add_cpp_namespace('internal')
@@ -1615,6 +1621,10 @@ def register_types_ns3_Hash_Function(module):
     module.add_class('Murmur3', import_from_module='ns.core', parent=root_module['ns3::Hash::Implementation'])
 
 def register_types_ns3_LteTimeDilationFactor(module):
+    root_module = module.get_root()
+    
+
+def register_types_ns3_TeidDscpMapping(module):
     root_module = module.get_root()
     
 
@@ -22912,6 +22922,7 @@ def register_functions(root_module):
     register_functions_ns3_FatalImpl(module.get_submodule('FatalImpl'), root_module)
     register_functions_ns3_Hash(module.get_submodule('Hash'), root_module)
     register_functions_ns3_LteTimeDilationFactor(module.get_submodule('LteTimeDilationFactor'), root_module)
+    register_functions_ns3_TeidDscpMapping(module.get_submodule('TeidDscpMapping'), root_module)
     register_functions_ns3_internal(module.get_submodule('internal'), root_module)
     return
 
@@ -22937,6 +22948,21 @@ def register_functions_ns3_LteTimeDilationFactor(module, root_module):
     module.add_function('SetTimeDilationFactor', 
                         'void', 
                         [param('uint16_t', 'tdf')])
+    return
+
+def register_functions_ns3_TeidDscpMapping(module, root_module):
+    ## teid-dscp-mapping.h (module 'lte'): extern ns3::Ipv4Header::DscpType ns3::TeidDscpMapping::GetTeidDscpMapping(uint32_t teid) [free function]
+    module.add_function('GetTeidDscpMapping', 
+                        'ns3::Ipv4Header::DscpType', 
+                        [param('uint32_t', 'teid')])
+    ## teid-dscp-mapping.h (module 'lte'): extern void ns3::TeidDscpMapping::SetTeidDscpMapping(uint32_t teid, ns3::EpsBearer::Qci qci) [free function]
+    module.add_function('SetTeidDscpMapping', 
+                        'void', 
+                        [param('uint32_t', 'teid'), param('ns3::EpsBearer::Qci', 'qci')])
+    ## teid-dscp-mapping.h (module 'lte'): extern void ns3::TeidDscpMapping::SetTeidDscpMapping(uint32_t teid, ns3::Ipv4Header::DscpType dscp) [free function]
+    module.add_function('SetTeidDscpMapping', 
+                        'void', 
+                        [param('uint32_t', 'teid'), param('ns3::Ipv4Header::DscpType', 'dscp')])
     return
 
 def register_functions_ns3_internal(module, root_module):

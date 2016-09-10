@@ -29,6 +29,7 @@
 
 #include <ns3/epc-gtpu-header.h>
 #include <ns3/eps-bearer-tag.h>
+#include "ns3/teid-dscp-mapping.h"
 
 namespace ns3 {
 
@@ -234,6 +235,8 @@ TapEpcEnbApplication::DoInitialContextSetupRequest (uint64_t mmeUeS1Id, uint16_t
       // side effect: create entries if not exist
       m_rbidTeidMap[rnti][erabIt->erabId] = params.gtpTeid;
       m_teidRbidMap[params.gtpTeid] = rbid;
+
+      TeidDscpMapping::SetTeidDscpMapping (params.gtpTeid, params.bearer.qci);
     }
 }
 
