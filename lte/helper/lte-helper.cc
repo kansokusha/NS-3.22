@@ -864,6 +864,18 @@ LteHelper::ActivateDedicatedEpsBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer
   return bearerId;
 }
 
+uint8_t
+LteHelper::ActivateDedicatedEpsBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer, EpcTft tft)
+{
+  NS_LOG_FUNCTION (this);
+
+  NS_ASSERT_MSG (m_epcHelper != 0, "dedicated EPS bearers cannot be set up when the EPC is not used");
+
+  uint64_t imsi = ueDevice->GetObject<LteUeNetDevice> ()->GetImsi ();
+  uint8_t bearerId = m_epcHelper->ActivateEpsBearer (ueDevice, imsi, &tft, bearer);
+  return bearerId;
+}
+
 /**
  * \ingroup lte
  *

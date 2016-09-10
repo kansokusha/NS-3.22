@@ -417,6 +417,8 @@ public:
    */
   uint8_t ActivateDedicatedEpsBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer, Ptr<EpcTft> tft);
 
+  uint8_t ActivateDedicatedEpsBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer, EpcTft tft);
+
   /**
    *  \brief Manually trigger dedicated bearer de-activation at specific simulation time
    *  \param ueDevice the UE on which dedicated bearer to be de-activated must be of the type LteUeNetDevice

@@ -109,7 +109,7 @@ TapEpcHelper::GetTypeId (void)
     .AddAttribute ("Mode",
                    "The operating mode to use",
                    EnumValue (Master),
-                   MakeEnumAccessor (&TapEpcHelper::SetMode),
+                   MakeEnumAccessor (&TapEpcHelper::m_mode),
                    MakeEnumChecker (Master, "Master",
                                     Slave, "Slave"))
     .AddAttribute ("MasterUeIpAddressBase",
@@ -172,6 +172,7 @@ TapEpcHelper::DoInitialize ()
       m_fileStream.open (m_logFile.c_str ());
       m_fileStream.rdbuf()->pubsetbuf(buffer, length);
       std::clog.rdbuf (m_fileStream.rdbuf ());
+      std::cerr.rdbuf (m_fileStream.rdbuf ());
     }
 
   if (m_mode == Master)
@@ -232,6 +233,7 @@ TapEpcHelper::MasterInitialize ()
   NS_LOG_LOGIC ("SGW device: " << m_sgwDeviceName);
   tap.SetDeviceName (m_sgwDeviceName);
   tap.SetTapMacAddress (Mac48Address (m_sgwMacAddress.c_str ()));
+  tap.SetDscpMarking (FdNetDevice::MarkDscp);
   NetDeviceContainer sgwDevices = tap.Install (m_sgwPgw);
   sgwDevices.Get (0)->SetAddress (Mac48Address (m_sgwMacAddress.c_str ()));
   NS_LOG_LOGIC ("MAC address of SGW: " << sgwDevices.Get (0)->GetAddress ());
@@ -356,12 +358,6 @@ TapEpcHelper::SlaveInitialize ()
 }
 
 void
-TapEpcHelper::SetMode (enum Mode mode)
-{
-  m_mode = mode;
-}
-
-void
 TapEpcHelper::HandleS1apConnection (Ptr<Socket> socket, const Address &addr)
 {
   NS_LOG_FUNCTION (this << socket << addr);
@@ -384,7 +380,7 @@ TapEpcHelper::RecvFromSlaveSocket (Ptr<Socket> socket)
     {
       if (typeOfMessage == EpcHelperHeader::SuccessfulOutcome)
         {
-          NS_LOG_LOGIC ("ActivateEpsBearerResponse");
+          NS_LOG_LOGIC ("TapEpcHelper::RecvFromSlaveSocket ActivateEpsBearerResponse");
           ActivateEpsBearerResponseHeader activateEpsBearerResponseHeader;
           packet->RemoveHeader (activateEpsBearerResponseHeader);
           uint8_t bearerId = activateEpsBearerResponseHeader.GetBearerId ();
@@ -411,7 +407,7 @@ void
 TapEpcHelper::RecvFromMasterSocket (Ptr<Socket> socket)
 {
   Ptr<Packet> packet = socket->Recv ();
-  NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
+  // NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
   HandleMasterPacket (socket, packet);
 }
 
@@ -434,7 +430,7 @@ TapEpcHelper::HandleMasterPacket (Ptr<Socket> socket, Ptr<Packet> packet)
     {
       if (typeOfMessage == EpcHelperHeader::InitiatingMessage)
         {
-          NS_LOG_LOGIC ("AddUeRequest");
+          NS_LOG_LOGIC ("TapEpcHelper::HandleMasterPacket AddUeRequest");
           AddUeRequestHeader addUeRequestHeader;
           packet->RemoveHeader (addUeRequestHeader);
           
@@ -447,7 +443,7 @@ TapEpcHelper::HandleMasterPacket (Ptr<Socket> socket, Ptr<Packet> packet)
     {
       if (typeOfMessage == EpcHelperHeader::InitiatingMessage)
         {
-          NS_LOG_LOGIC ("AddEnbRequest");
+          NS_LOG_LOGIC ("TapEpcHelper::HandleMasterPacket AddEnbRequest");
           AddEnbRequestHeader addEnbRequestHeader;
           packet->RemoveHeader (addEnbRequestHeader);
           
@@ -463,7 +459,7 @@ TapEpcHelper::HandleMasterPacket (Ptr<Socket> socket, Ptr<Packet> packet)
     {
       if (typeOfMessage == EpcHelperHeader::InitiatingMessage)
         {
-          NS_LOG_LOGIC ("ActivateEpsBearerRequest");
+          NS_LOG_LOGIC ("TapEpcHelper::HandleMasterPacket ActivateEpsBearerRequest");
           ActivateEpsBearerRequestHeader activateEpsBearerRequestHeader;
           packet->RemoveHeader (activateEpsBearerRequestHeader);
           
@@ -502,7 +498,7 @@ void
 TapEpcHelper::RecvFromS1apSocket (Ptr<Socket> socket)
 {
   Ptr<Packet> packet = socket->Recv ();
-  NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
+  // NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
   HandleS1apPacket (socket, packet);
 }
 
@@ -519,7 +515,7 @@ TapEpcHelper::HandleS1apPacket (Ptr<Socket> socket, Ptr<Packet> packet)
     {
       if (typeOfMessage == EpcS1apHeader::InitiatingMessage)
         {
-          NS_LOG_LOGIC ("InitialUeMessage");
+          NS_LOG_LOGIC ("TapEpcHelper::HandleS1apPacket InitialUeMessage");
           InitialUeRequestHeader initialUeRequestHeader;
           packet->RemoveHeader (initialUeRequestHeader);
           
@@ -535,7 +531,7 @@ TapEpcHelper::HandleS1apPacket (Ptr<Socket> socket, Ptr<Packet> packet)
     {
       if (typeOfMessage == EpcS1apHeader::InitiatingMessage)
         {
-          NS_LOG_LOGIC ("PathSwitchRequest");
+          NS_LOG_LOGIC ("TapEpcHelper::HandleS1apPacket PathSwitchRequest");
           PathSwitchRequestHeader pathSwitchRequestHeader;
           packet->RemoveHeader (pathSwitchRequestHeader);
           
@@ -553,7 +549,7 @@ TapEpcHelper::HandleS1apPacket (Ptr<Socket> socket, Ptr<Packet> packet)
     {
       if (typeOfMessage == EpcS1apHeader::InitiatingMessage)
         {
-          NS_LOG_LOGIC ("ErabRelease");
+          NS_LOG_LOGIC ("TapEpcHelper::HandleS1apPacket ErabRelease");
           ErabReleaseIndicationHeader erabReleaseIndicationHeader;
           packet->RemoveHeader (erabReleaseIndicationHeader);
           
@@ -608,6 +604,7 @@ TapEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevice, uint16_t ce
   NS_LOG_LOGIC ("eNB device: " << enbDevNameWithCount.str());
   tap.SetDeviceName (enbDevNameWithCount.str());
   tap.SetTapMacAddress (TapEpcHelper::AllocateMac48Address (static_cast<uint64_t> (cellId)));
+  tap.SetDscpMarking (FdNetDevice::MarkDscp);
   NetDeviceContainer enbDevices = tap.Install (enb);
   enbDevices.Get (0)->SetAddress (TapEpcHelper::AllocateMac48Address (static_cast<uint64_t> (cellId)));
   NS_LOG_LOGIC ("MAC address of eNB: " << enbDevices.Get (0)->GetAddress ());
@@ -660,7 +657,7 @@ TapEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevice, uint16_t ce
   retval = enbLteSocket->Connect (enbLteSocketConnectAddress);
   NS_ASSERT (retval == 0);
   
-  NS_LOG_INFO ("create EpcEnbApplication");
+  NS_LOG_INFO ("Create EpcEnbApplication");
   Ptr<TapEpcEnbApplication> enbApp = CreateObject<TapEpcEnbApplication> (enbLteSocket, enbS1uSocket, enbS1apSocket, enbAddress, m_sgwIpv4Address, cellId);
   enb->AddApplication (enbApp);
   NS_ASSERT (enb->GetNApplications () == 1);
@@ -671,7 +668,7 @@ TapEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevice, uint16_t ce
   Ptr<EpcX2> x2 = CreateObject<EpcX2> ();
   enb->AggregateObject (x2);
 
-  NS_LOG_INFO ("connect S1-AP interface");
+  NS_LOG_INFO ("Connect S1-AP interface");
   if (m_mode == Master)
     {
       m_mme->AddEnb (cellId, enbAddress, enbAddress);
@@ -692,7 +689,7 @@ TapEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevice, uint16_t ce
       packet->AddHeader (addEnbRequestHeader);
       packet->AddHeader (epcHelperHeader);
       SendToSlaveSocket (packet);
-      NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
+      // NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
     }
 }
 
@@ -767,7 +764,7 @@ TapEpcHelper::AddUe (Ptr<NetDevice> ueDevice, uint64_t imsi)
       packet->AddHeader (addUeRequestHeader);
       packet->AddHeader (epcHelperHeader);
       SendToSlaveSocket (packet);
-      NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
+      // NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
 
       m_slaveMme->AddUe (imsi);
     }
@@ -814,7 +811,7 @@ TapEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_t imsi, Ptr<Epc
       packet->AddHeader (activateEpsBearerRequestHeader);
       packet->AddHeader (epcHelperHeader);
       SendToSlaveSocket (packet);
-      NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
+      // NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
 
       bearerId = m_slaveMme->AddBearer (imsi, tft, bearer);
     }

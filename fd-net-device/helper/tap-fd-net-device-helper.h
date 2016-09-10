@@ -91,6 +91,8 @@ public:
    */
   void SetTapMacAddress (Mac48Address mac);
 
+  void SetDscpMarking (FdNetDevice::DscpMarking dscpMarking);
+
 protected:
 
   Ptr<NetDevice> InstallPriv (Ptr<Node> node) const;
@@ -135,6 +137,8 @@ protected:
    * The TAP device MAC address.
    */
   Mac48Address m_tapMac;
+
+  FdNetDevice::DscpMarking m_dscpMarking;
 
 };
 

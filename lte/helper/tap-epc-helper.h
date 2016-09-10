@@ -93,8 +93,6 @@ public:
     Master,
     Slave
   };
-  
-  void SetMode (TapEpcHelper::Mode mode);
 
 private:
 

@@ -69,6 +69,7 @@ TapFdNetDeviceHelper::TapFdNetDeviceHelper ()
   m_tapIp6 = Ipv6Address::GetZero ();
   m_tapPrefix6 = 64;
   m_tapMac = Mac48Address::Allocate ();
+  m_dscpMarking = FdNetDevice::NoDscp;
 }
 
 void
@@ -107,6 +108,12 @@ TapFdNetDeviceHelper::SetTapMacAddress (Mac48Address mac)
   m_tapMac = mac;
 }
 
+void
+TapFdNetDeviceHelper::SetDscpMarking (FdNetDevice::DscpMarking dscpMarking)
+{
+  m_dscpMarking = dscpMarking;
+}
+
 Ptr<NetDevice>
 TapFdNetDeviceHelper::InstallPriv (Ptr<Node> node) const
 {
@@ -124,6 +131,8 @@ TapFdNetDeviceHelper::InstallPriv (Ptr<Node> node) const
     {
       fdnd->SetEncapsulationMode (FdNetDevice::DIXPI);
     }
+
+  fdnd->SetDscpMarking (m_dscpMarking);
 
   SetFileDescriptor (device);
   return device;

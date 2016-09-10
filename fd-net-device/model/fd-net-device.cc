@@ -40,6 +40,12 @@
 #include <arpa/inet.h>
 #include <net/ethernet.h>
 
+#include "ns3/ipv4-header.h"
+#include "ns3/ipv4-l3-protocol.h"
+#include "ns3/udp-l4-protocol.h"
+#include "ns3/udp-header.h"
+#include "ns3/epc-gtpu-header.h"
+
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("FdNetDevice");
@@ -113,6 +119,12 @@ FdNetDevice::GetTypeId (void)
                    UintegerValue (1000),
                    MakeUintegerAccessor (&FdNetDevice::m_maxPendingReads),
                    MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("DscpMarking",
+                   "Enable DSCP marking for QoS",
+                   EnumValue (NoDscp),
+                   MakeEnumAccessor (&FdNetDevice::SetDscpMarking),
+                   MakeEnumChecker (MarkDscp, "MarkDscp",
+                                    NoDscp, "NoDscp"))
     //
     // Trace sources at the "top" of the net device, where packets transition
     // to/from higher layers.  These points do not really correspond to the
@@ -209,6 +221,13 @@ FdNetDevice::GetEncapsulationMode (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_encapMode;
+}
+
+void
+FdNetDevice::SetDscpMarking (enum DscpMarking dscpMarking)
+{
+  NS_LOG_FUNCTION (dscpMarking);
+  m_dscpMarking = dscpMarking;
 }
 
 void
@@ -500,6 +519,36 @@ FdNetDevice::SendFrom (Ptr<Packet> packet, const Address& src, const Address& de
     {
       m_macTxDropTrace (packet);
       return false;
+    }
+
+  if (m_dscpMarking == MarkDscp && protocolNumber == Ipv4L3Protocol::PROT_NUMBER)
+    {
+      Ptr<Packet> pCopy = packet->Copy ();
+      Ipv4Header ipv4Header;
+      UdpHeader udpHeader;
+      GtpuHeader gtpu;
+      uint16_t destPort = 0;
+      uint16_t srcPort = 0;
+
+      pCopy->RemoveHeader (ipv4Header);
+      if (ipv4Header.GetProtocol () == UdpL4Protocol::PROT_NUMBER)
+        {
+          pCopy->RemoveHeader (udpHeader);
+          srcPort = udpHeader.GetSourcePort ();
+          destPort = udpHeader.GetDestinationPort ();
+        }
+
+      if (srcPort == 2152 && destPort == 2152)
+        {
+          pCopy->RemoveHeader (gtpu);
+          uint32_t teid = gtpu.GetTeid ();
+          NS_LOG_DEBUG ("FdNetDevice::SendFrom, teid: " << teid);
+
+          packet->RemoveHeader (ipv4Header);
+          ipv4Header.SetDscp (Ipv4Header::DSCP_EF);
+          ipv4Header.EnableChecksum ();
+          packet->AddHeader (ipv4Header);
+        }
     }
 
   Mac48Address destination = Mac48Address::ConvertFrom (dest);

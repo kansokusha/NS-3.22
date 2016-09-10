@@ -99,6 +99,12 @@ public:
                       Raw protocol(IP, IPv6, etc) frame. */
   };
 
+  enum DscpMarking
+  {
+    MarkDscp,
+    NoDscp
+  };
+
   /**
    * Constructor for the FdNetDevice.
    */
@@ -116,6 +122,8 @@ public:
    *
    */
   void SetEncapsulationMode (FdNetDevice::EncapsulationMode mode);
+
+  void SetDscpMarking (FdNetDevice::DscpMarking dscpMarking);
 
   /**
    * Get the link layer encapsulation mode of this device.
@@ -251,6 +259,8 @@ private:
    * The typ of encapsulation of the received/transmited frames.
    */
   EncapsulationMode m_encapMode;
+
+  DscpMarking m_dscpMarking;
 
   /**
    * Flag indicating whether or not the link is up.  In this case,

@@ -17009,6 +17009,10 @@ def register_Ns3LteHelper_methods(root_module, cls):
     cls.add_method('ActivateDedicatedEpsBearer', 
                    'uint8_t', 
                    [param('ns3::Ptr< ns3::NetDevice >', 'ueDevice'), param('ns3::EpsBearer', 'bearer'), param('ns3::Ptr< ns3::EpcTft >', 'tft')])
+    ## lte-helper.h (module 'lte'): uint8_t ns3::LteHelper::ActivateDedicatedEpsBearer(ns3::Ptr<ns3::NetDevice> ueDevice, ns3::EpsBearer bearer, ns3::EpcTft tft) [member function]
+    cls.add_method('ActivateDedicatedEpsBearer', 
+                   'uint8_t', 
+                   [param('ns3::Ptr< ns3::NetDevice >', 'ueDevice'), param('ns3::EpsBearer', 'bearer'), param('ns3::EpcTft', 'tft')])
     ## lte-helper.h (module 'lte'): void ns3::LteHelper::AddX2Interface(ns3::NodeContainer enbNodes) [member function]
     cls.add_method('AddX2Interface', 
                    'void', 
@@ -20620,10 +20624,6 @@ def register_Ns3TapEpcHelper_methods(root_module, cls):
                    'ns3::Mac48Address', 
                    [], 
                    is_virtual=True)
-    ## tap-epc-helper.h (module 'lte'): void ns3::TapEpcHelper::SetMode(ns3::TapEpcHelper::Mode mode) [member function]
-    cls.add_method('SetMode', 
-                   'void', 
-                   [param('ns3::TapEpcHelper::Mode', 'mode')])
     return
 
 def register_Ns3TdBetFfMacScheduler_methods(root_module, cls):

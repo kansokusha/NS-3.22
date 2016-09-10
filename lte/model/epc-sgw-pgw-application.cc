@@ -162,6 +162,10 @@ EpcSgwPgwApplication::RecvFromTunDevice (Ptr<Packet> packet, const Address& sour
         }
       else
         {
+          packet->RemoveHeader (ipv4Header);
+          ipv4Header.SetDscp (Ipv4Header::DSCP_AF21);
+          packet->AddHeader (ipv4Header);
+
           SendToS1uSocket (packet, enbAddr, teid);
         }
     }

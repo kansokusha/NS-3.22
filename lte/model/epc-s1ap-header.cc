@@ -224,7 +224,7 @@ NS_OBJECT_ENSURE_REGISTERED (ErabReleaseIndicationHeader);
 
 ErabReleaseIndicationHeader::ErabReleaseIndicationHeader ()
   : m_numberOfIes (0x00),
-    m_headerLength (0x0B),
+    m_headerLength (0x1B),
     m_mmeUeS1Id (0x00),
     m_enbUeS1Id (0x00),
     m_erabToBeReleaseIndication ()
@@ -445,7 +445,7 @@ NS_OBJECT_ENSURE_REGISTERED (PathSwitchRequestHeader);
 
 PathSwitchRequestHeader::PathSwitchRequestHeader ()
   : m_numberOfIes (0x00),
-    m_headerLength (0x1D),
+    m_headerLength (0xB3),
     m_enbUeS1Id (0x00),
     m_mmeUeS1Id (0x00),
     m_cgi (0x00),
@@ -598,7 +598,7 @@ NS_OBJECT_ENSURE_REGISTERED (InitialContextSetupRequestHeader);
 
 InitialContextSetupRequestHeader::InitialContextSetupRequestHeader ()
   : m_numberOfIes (0x00),
-    m_headerLength (0x55),
+    m_headerLength (0x290),
     m_mmeUeS1Id (0x00),
     m_enbUeS1Id (0x00)
 {
@@ -755,7 +755,7 @@ NS_OBJECT_ENSURE_REGISTERED (PathSwitchRequestAcknowledgeHeader);
 
 PathSwitchRequestAcknowledgeHeader::PathSwitchRequestAcknowledgeHeader ()
   : m_numberOfIes (0x00),
-    m_headerLength (0x1C),
+    m_headerLength (0xA3),
     m_enbUeS1Id (0x00),
     m_mmeUeS1Id (0x00),
     m_cgi (0x00),
