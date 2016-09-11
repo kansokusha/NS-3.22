@@ -419,6 +419,7 @@ TapEpcHelper::HandleMasterConnection (Ptr<Socket> socket, const Address &addr)
 void
 TapEpcHelper::HandleMasterPacket (Ptr<Socket> socket, Ptr<Packet> packet)
 {
+  NS_LOG_LOGIC ("TapEpcHelper::HandleMasterPacket packet->GetSize ():" << packet->GetSize ());
   EpcHelperHeader epcHelperHeader;
   packet->RemoveHeader (epcHelperHeader);
   
