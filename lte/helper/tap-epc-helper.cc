@@ -407,7 +407,6 @@ void
 TapEpcHelper::RecvFromMasterSocket (Ptr<Socket> socket)
 {
   Ptr<Packet> packet = socket->Recv ();
-  // NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
   HandleMasterPacket (socket, packet);
 }
 
@@ -498,7 +497,6 @@ void
 TapEpcHelper::RecvFromS1apSocket (Ptr<Socket> socket)
 {
   Ptr<Packet> packet = socket->Recv ();
-  // NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
   HandleS1apPacket (socket, packet);
 }
 
@@ -689,7 +687,6 @@ TapEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevice, uint16_t ce
       packet->AddHeader (addEnbRequestHeader);
       packet->AddHeader (epcHelperHeader);
       SendToSlaveSocket (packet);
-      // NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
     }
 }
 
@@ -764,7 +761,6 @@ TapEpcHelper::AddUe (Ptr<NetDevice> ueDevice, uint64_t imsi)
       packet->AddHeader (addUeRequestHeader);
       packet->AddHeader (epcHelperHeader);
       SendToSlaveSocket (packet);
-      // NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
 
       m_slaveMme->AddUe (imsi);
     }
@@ -811,7 +807,6 @@ TapEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_t imsi, Ptr<Epc
       packet->AddHeader (activateEpsBearerRequestHeader);
       packet->AddHeader (epcHelperHeader);
       SendToSlaveSocket (packet);
-      // NS_LOG_LOGIC ("PacketSize = " << packet->GetSize ());
 
       bearerId = m_slaveMme->AddBearer (imsi, tft, bearer);
     }

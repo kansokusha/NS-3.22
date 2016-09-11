@@ -313,7 +313,6 @@ TapEpcEnbApplication::RecvFromS1apSocket (Ptr<Socket> socket)
   NS_LOG_FUNCTION (this);
   NS_ASSERT (socket == m_s1apSocket);
   Ptr<Packet> packet = socket->Recv ();
-  NS_LOG_LOGIC ("Packet size = " << packet->GetSize ());
   HandleS1apPacket (socket, packet);
 }
 
